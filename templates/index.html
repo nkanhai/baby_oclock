@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍼 Baby Tracker</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1f2e">
+    <link rel="manifest" href="/static/manifest.json">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #1a1f2e;
+            color: #e8eaed;
+            padding: 16px;
+            padding-bottom: 32px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .last-feed-container {
+            background: #252b3b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .last-feed-time {
+            font-size: 32px;
+            font-weight: 700;
+            color: #4A90D9;
+            margin-bottom: 8px;
+        }
+
+        .last-feed-details {
+            font-size: 16px;
+            color: #a8adb8;
+            line-height: 1.4;
+        }
+
+        .last-feed-none {
+            font-size: 18px;
+            color: #a8adb8;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .action-btn {
+            background: #2d3548;
+            border: 2px solid #3d4556;
+            border-radius: 16px;
+            padding: 24px 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #e8eaed;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-height: 100px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+            background: #353b4e;
+        }
+
+        .action-btn .emoji {
+            font-size: 36px;
+            line-height: 1;
+        }
+
+        .action-btn.bottle {
+            border-color: #4A90D9;
+        }
+
+        .action-btn.nurse {
+            border-color: #E8877C;
+        }
+
+        .action-btn.pump {
+            border-color: #5CB8B2;
+        }
+
+        .action-btn.voice {
+            border-color: #9b87e8;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #252b3b;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .quick-amount-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .quick-btn {
+            background: #2d3548;
+            border: 2px solid #4A90D9;
+            border-radius: 12px;
+            padding: 16px 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #e8eaed;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:active {
+            background: #4A90D9;
+            transform: scale(0.95);
+        }
+
+        .side-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .side-btn {
+            background: #2d3548;
+            border: 2px solid #E8877C;
+            border-radius: 12px;
+            padding: 16px 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8eaed;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .side-btn:active {
+            background: #E8877C;
+            transform: scale(0.95);
+        }
+
+        .pump-side-btn {
+            border-color: #5CB8B2;
+        }
+
+        .pump-side-btn:active {
+            background: #5CB8B2;
+        }
+
+        .custom-input-group {
+            margin-bottom: 16px;
+        }
+
+        .custom-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #a8adb8;
+        }
+
+        .custom-input {
+            width: 100%;
+            background: #1a1f2e;
+            border: 2px solid #3d4556;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            color: #e8eaed;
+            font-family: inherit;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: #4A90D9;
+        }
+
+        .expandable {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #3d4556;
+        }
+
+        .expandable-toggle {
+            background: none;
+            border: none;
+            color: #4A90D9;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            margin-bottom: 12px;
+        }
+
+        .expandable-content {
+            display: none;
+        }
+
+        .expandable-content.active {
+            display: block;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            background: #4A90D9;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        .modal-btn.secondary {
+            background: #3d4556;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3548;
+            color: #e8eaed;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            max-width: 90%;
+        }
+
+        .toast.active {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        .toast-message {
+            flex: 1;
+        }
+
+        .toast-undo {
+            background: #4A90D9;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Feed log */
+        .log-section {
+            margin-top: 32px;
+        }
+
+        .log-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #3d4556;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats-summary {
+            font-size: 13px;
+            color: #a8adb8;
+            font-weight: 400;
+        }
+
+        .feed-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .feed-item {
+            background: #252b3b;
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .feed-info {
+            flex: 1;
+        }
+
+        .feed-time {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .feed-details {
+            font-size: 14px;
+            color: #a8adb8;
+        }
+
+        .feed-delete {
+            background: #aa4444;
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .feed-delete:active {
+            transform: scale(0.9);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #a8adb8;
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+
+        /* Who's logging toggle */
+        .who-toggle {
+            display: flex;
+            gap: 8px;
+            background: #252b3b;
+            border-radius: 12px;
+            padding: 6px;
+            margin-bottom: 20px;
+        }
+
+        .who-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #a8adb8;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .who-btn.active {
+            background: #4A90D9;
+            color: white;
+        }
+
+        /* Voice modal */
+        .voice-listening {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .voice-animation {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: #9b87e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .voice-transcript {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 16px;
+            background: #1a1f2e;
+            border-radius: 12px;
+            min-height: 60px;
+        }
+
+        .voice-parsed {
+            background: #2d3548;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            text-align: left;
+        }
+
+        .voice-parsed-item {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .voice-parsed-label {
+            color: #a8adb8;
+            display: inline-block;
+            width: 80px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #a8adb8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🍼 Esmé's Feed Tracker</h1>
+    </div>
+
+    <!-- Who's logging toggle -->
+    <div class="who-toggle">
+        <button class="who-btn active" data-who="Mom">Mom</button>
+        <button class="who-btn" data-who="Dad">Dad</button>
+    </div>
+
+    <!-- Last feed status -->
+    <div class="last-feed-container" id="lastFeedContainer">
+        <div class="last-feed-none">Loading...</div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="action-grid">
+        <button class="action-btn bottle" id="bottleBtn">
+            <span class="emoji">🍼</span>
+            <span>Bottle</span>
+        </button>
+        <button class="action-btn nurse" id="nurseBtn">
+            <span class="emoji">🤱</span>
+            <span>Nurse</span>
+        </button>
+        <button class="action-btn pump" id="pumpBtn">
+            <span class="emoji">💧</span>
+            <span>Pump</span>
+        </button>
+        <button class="action-btn voice" id="voiceBtn">
+            <span class="emoji">🎤</span>
+            <span>Voice</span>
+        </button>
+    </div>
+
+    <!-- Today's log -->
+    <div class="log-section">
+        <div class="log-header">
+            <span>Today's Log</span>
+            <span class="stats-summary" id="statsText">—</span>
+        </div>
+        <div class="feed-list" id="feedList">
+            <div class="loading">Loading feeds...</div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="bottleModal">
+        <div class="modal-content">
+            <div class="modal-title">🍼 Bottle Feed</div>
+            <div class="quick-amount-grid">
+                <button class="quick-btn" data-oz="1">1 oz</button>
+                <button class="quick-btn" data-oz="2">2 oz</button>
+                <button class="quick-btn" data-oz="3">3 oz</button>
+                <button class="quick-btn" data-oz="4">4 oz</button>
+                <button class="quick-btn" data-oz="5">5 oz</button>
+                <button class="quick-btn" data-oz="6">6 oz</button>
+            </div>
+            <div class="custom-input-group">
+                <label>Custom amount (oz)</label>
+                <input type="number" step="0.5" class="custom-input" id="bottleCustomOz" placeholder="e.g., 3.5">
+            </div>
+            <div class="expandable">
+                <button class="expandable-toggle" id="bottleMoreToggle">+ More options</button>
+                <div class="expandable-content" id="bottleMoreContent">
+                    <div class="custom-input-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" class="custom-input" id="bottleDuration" placeholder="Optional">
+                    </div>
+                    <div class="custom-input-group">
+                        <label>Notes</label>
+                        <input type="text" class="custom-input" id="bottleNotes" placeholder="Optional">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="bottleCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="nurseModal">
+        <div class="modal-content">
+            <div class="modal-title">🤱 Nursing</div>
+            <div class="side-selector">
+                <button class="side-btn" data-side="left">Left</button>
+                <button class="side-btn" data-side="right">Right</button>
+                <button class="side-btn" data-side="both">Both</button>
+            </div>
+            <div class="expandable">
+                <button class="expandable-toggle" id="nurseMoreToggle">+ More options</button>
+                <div class="expandable-content" id="nurseMoreContent">
+                    <div class="custom-input-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" class="custom-input" id="nurseDuration" placeholder="Optional">
+                    </div>
+                    <div class="custom-input-group">
+                        <label>Notes</label>
+                        <input type="text" class="custom-input" id="nurseNotes" placeholder="Optional">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="nurseCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="pumpModal">
+        <div class="modal-content">
+            <div class="modal-title">💧 Pump</div>
+            <div class="side-selector">
+                <button class="side-btn pump-side-btn" data-side="left">Left</button>
+                <button class="side-btn pump-side-btn" data-side="right">Right</button>
+                <button class="side-btn pump-side-btn" data-side="both">Both</button>
+            </div>
+            <div id="pumpAmountSection" style="display: none;">
+                <div class="quick-amount-grid">
+                    <button class="quick-btn" data-oz="1">1 oz</button>
+                    <button class="quick-btn" data-oz="2">2 oz</button>
+                    <button class="quick-btn" data-oz="3">3 oz</button>
+                    <button class="quick-btn" data-oz="4">4 oz</button>
+                    <button class="quick-btn" data-oz="5">5 oz</button>
+                    <button class="quick-btn" data-oz="6">6 oz</button>
+                </div>
+                <div class="custom-input-group">
+                    <label>Custom amount (oz)</label>
+                    <input type="number" step="0.5" class="custom-input" id="pumpCustomOz" placeholder="e.g., 3.5">
+                </div>
+                <div class="expandable">
+                    <button class="expandable-toggle" id="pumpMoreToggle">+ More options</button>
+                    <div class="expandable-content" id="pumpMoreContent">
+                        <div class="custom-input-group">
+                            <label>Duration (minutes)</label>
+                            <input type="number" class="custom-input" id="pumpDuration" placeholder="Optional">
+                        </div>
+                        <div class="custom-input-group">
+                            <label>Notes</label>
+                            <input type="text" class="custom-input" id="pumpNotes" placeholder="Optional">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="pumpCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="voiceModal">
+        <div class="modal-content">
+            <div class="modal-title">🎤 Voice Input</div>
+            <div class="voice-listening" id="voiceListening">
+                <div class="voice-animation">🎤</div>
+                <p>Listening...</p>
+                <p style="font-size: 14px; color: #a8adb8; margin-top: 8px;">
+                    Say something like:<br>
+                    "Bottle 3 ounces"<br>
+                    "Nurse left 10 minutes"
+                </p>
+            </div>
+            <div class="voice-transcript" id="voiceTranscript"></div>
+            <div id="voiceParsedSection" style="display: none;">
+                <div class="voice-parsed" id="voiceParsed"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="voiceCancel">Cancel</button>
+                <button class="modal-btn" id="voiceConfirm" style="display: none;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span class="toast-message" id="toastMessage"></span>
+        <button class="toast-undo" id="toastUndo" style="display: none;">Undo</button>
+    </div>
+
+    <script>
+        // State
+        let currentWho = 'Mom';
+        let lastCreatedFeedId = null;
+        let pumpSelectedSide = null;
+        let voiceParsedData = null;
+
+        // Speech recognition
+        let recognition = null;
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+        }
+
+        // Elements
+        const bottleBtn = document.getElementById('bottleBtn');
+        const nurseBtn = document.getElementById('nurseBtn');
+        const pumpBtn = document.getElementById('pumpBtn');
+        const voiceBtn = document.getElementById('voiceBtn');
+
+        const bottleModal = document.getElementById('bottleModal');
+        const nurseModal = document.getElementById('nurseModal');
+        const pumpModal = document.getElementById('pumpModal');
+        const voiceModal = document.getElementById('voiceModal');
+
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastUndo = document.getElementById('toastUndo');
+
+        // Hide voice button if not supported
+        if (!recognition) {
+            voiceBtn.style.display = 'none';
+        }
+
+        // Who toggle
+        document.querySelectorAll('.who-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.who-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentWho = btn.dataset.who;
+            });
+        });
+
+        // Expandable toggles
+        document.getElementById('bottleMoreToggle').addEventListener('click', function() {
+            const content = document.getElementById('bottleMoreContent');
+            content.classList.toggle('active');
+            this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
+        });
+
+        document.getElementById('nurseMoreToggle').addEventListener('click', function() {
+            const content = document.getElementById('nurseMoreContent');
+            content.classList.toggle('active');
+            this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
+        });
+
+        document.getElementById('pumpMoreToggle').addEventListener('click', function() {
+            const content = document.getElementById('pumpMoreContent');
+            content.classList.toggle('active');
+            this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
+        });
+
+        // Modal open/close
+        bottleBtn.addEventListener('click', () => openModal(bottleModal));
+        nurseBtn.addEventListener('click', () => openModal(nurseModal));
+        pumpBtn.addEventListener('click', () => openModal(pumpModal));
+        voiceBtn.addEventListener('click', () => {
+            if (recognition) {
+                openModal(voiceModal);
+                startVoiceRecognition();
+            }
+        });
+
+        document.getElementById('bottleCancel').addEventListener('click', () => closeModal(bottleModal));
+        document.getElementById('nurseCancel').addEventListener('click', () => closeModal(nurseModal));
+        document.getElementById('pumpCancel').addEventListener('click', () => closeModal(pumpModal));
+        document.getElementById('voiceCancel').addEventListener('click', () => {
+            if (recognition) recognition.stop();
+            closeModal(voiceModal);
+        });
+
+        function openModal(modal) {
+            modal.classList.add('active');
+            // Reset forms
+            if (modal === bottleModal) {
+                document.getElementById('bottleCustomOz').value = '';
+                document.getElementById('bottleDuration').value = '';
+                document.getElementById('bottleNotes').value = '';
+            } else if (modal === nurseModal) {
+                document.getElementById('nurseDuration').value = '';
+                document.getElementById('nurseNotes').value = '';
+            } else if (modal === pumpModal) {
+                pumpSelectedSide = null;
+                document.getElementById('pumpAmountSection').style.display = 'none';
+                document.getElementById('pumpCustomOz').value = '';
+                document.getElementById('pumpDuration').value = '';
+                document.getElementById('pumpNotes').value = '';
+            } else if (modal === voiceModal) {
+                document.getElementById('voiceTranscript').textContent = '';
+                document.getElementById('voiceParsedSection').style.display = 'none';
+                document.getElementById('voiceConfirm').style.display = 'none';
+                document.getElementById('voiceListening').style.display = 'block';
+            }
+        }
+
+        function closeModal(modal) {
+            modal.classList.remove('active');
+        }
+
+        // Bottle quick buttons
+        document.querySelectorAll('#bottleModal .quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const oz = parseFloat(btn.dataset.oz);
+                logFeed('bottle', null, oz);
+            });
+        });
+
+        // Bottle custom input (log on Enter)
+        document.getElementById('bottleCustomOz').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const oz = parseFloat(e.target.value);
+                if (oz > 0) {
+                    logFeed('bottle', null, oz);
+                }
+            }
+        });
+
+        // Nurse side buttons
+        document.querySelectorAll('#nurseModal .side-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const side = btn.dataset.side;
+                logFeed('nurse', side);
+            });
+        });
+
+        // Pump side buttons
+        document.querySelectorAll('#pumpModal .side-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                pumpSelectedSide = btn.dataset.side;
+                document.getElementById('pumpAmountSection').style.display = 'block';
+            });
+        });
+
+        // Pump quick buttons
+        document.querySelectorAll('#pumpModal .quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (pumpSelectedSide) {
+                    const oz = parseFloat(btn.dataset.oz);
+                    logFeed('pump', pumpSelectedSide, oz);
+                }
+            });
+        });
+
+        // Pump custom input
+        document.getElementById('pumpCustomOz').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && pumpSelectedSide) {
+                const oz = parseFloat(e.target.value);
+                if (oz > 0) {
+                    logFeed('pump', pumpSelectedSide, oz);
+                }
+            }
+        });
+
+        // Log feed
+        async function logFeed(type, side = null, amountOz = null) {
+            let duration = null;
+            let notes = '';
+
+            // Get optional fields based on type
+            if (type === 'bottle') {
+                if (!amountOz) {
+                    amountOz = parseFloat(document.getElementById('bottleCustomOz').value) || null;
+                }
+                duration = parseInt(document.getElementById('bottleDuration').value) || null;
+                notes = document.getElementById('bottleNotes').value || '';
+            } else if (type === 'nurse') {
+                duration = parseInt(document.getElementById('nurseDuration').value) || null;
+                notes = document.getElementById('nurseNotes').value || '';
+            } else if (type === 'pump') {
+                if (!amountOz) {
+                    amountOz = parseFloat(document.getElementById('pumpCustomOz').value) || null;
+                }
+                duration = parseInt(document.getElementById('pumpDuration').value) || null;
+                notes = document.getElementById('pumpNotes').value || '';
+            }
+
+            const feedData = {
+                type: type,
+                side: side,
+                amount_oz: amountOz,
+                duration_min: duration,
+                notes: notes,
+                logged_by: currentWho,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch('/api/feeds', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(feedData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    lastCreatedFeedId = result.id;
+
+                    // Close modal
+                    closeModal(bottleModal);
+                    closeModal(nurseModal);
+                    closeModal(pumpModal);
+                    closeModal(voiceModal);
+
+                    // Show toast
+                    showToast(buildFeedSummary(type, side, amountOz, duration), true);
+
+                    // Refresh feeds
+                    loadFeeds();
+                }
+            } catch (error) {
+                console.error('Error logging feed:', error);
+                showToast('Error logging feed', false);
+            }
+        }
+
+        function buildFeedSummary(type, side, amountOz, duration) {
+            let summary = '';
+            if (type === 'bottle') {
+                summary = '🍼 Bottle';
+            } else if (type === 'nurse') {
+                summary = '🤱 Nurse';
+                if (side) summary += ` (${side})`;
+            } else if (type === 'pump') {
+                summary = '💧 Pump';
+                if (side) summary += ` (${side})`;
+            }
+
+            if (amountOz) summary += ` — ${amountOz} oz`;
+            if (duration) summary += ` — ${duration} min`;
+
+            return summary + ' logged';
+        }
+
+        // Toast
+        let toastTimeout = null;
+        function showToast(message, showUndo = false) {
+            clearTimeout(toastTimeout);
+
+            toastMessage.textContent = message;
+            toastUndo.style.display = showUndo ? 'block' : 'none';
+            toast.classList.add('active');
+
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('active');
+                lastCreatedFeedId = null;
+            }, 5000);
+        }
+
+        // Undo
+        toastUndo.addEventListener('click', async () => {
+            if (lastCreatedFeedId !== null) {
+                try {
+                    const response = await fetch(`/api/feeds/${lastCreatedFeedId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        toast.classList.remove('active');
+                        lastCreatedFeedId = null;
+                        loadFeeds();
+                    }
+                } catch (error) {
+                    console.error('Error undoing feed:', error);
+                }
+            }
+        });
+
+        // Load feeds
+        async function loadFeeds() {
+            try {
+                const response = await fetch('/api/feeds');
+                const data = await response.json();
+
+                // Update last feed
+                const lastFeedContainer = document.getElementById('lastFeedContainer');
+                if (data.last_feed_minutes_ago !== null) {
+                    const timeAgo = formatTimeAgo(data.last_feed_minutes_ago);
+                    lastFeedContainer.innerHTML = `
+                        <div class="last-feed-time">${timeAgo}</div>
+                        <div class="last-feed-details">${data.last_feed_summary}</div>
+                    `;
+                } else {
+                    lastFeedContainer.innerHTML = '<div class="last-feed-none">No feeds logged today</div>';
+                }
+
+                // Update stats
+                const statsText = document.getElementById('statsText');
+                statsText.textContent = `${data.total_feeds_today} feeds • ${data.total_oz_today} oz`;
+
+                // Update feed list
+                const feedList = document.getElementById('feedList');
+                if (data.feeds.length === 0) {
+                    feedList.innerHTML = '<div class="empty-state">No feeds logged yet today.<br>Tap a button above to start tracking!</div>';
+                } else {
+                    feedList.innerHTML = data.feeds.map(feed => `
+                        <div class="feed-item">
+                            <div class="feed-info">
+                                <div class="feed-time">${feed.time}</div>
+                                <div class="feed-details">${buildFeedDetailsText(feed)}</div>
+                            </div>
+                            <button class="feed-delete" onclick="deleteFeed(${feed.id})">×</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading feeds:', error);
+            }
+        }
+
+        function buildFeedDetailsText(feed) {
+            let details = feed.type;
+            if (feed.amount_oz) details += ` • ${feed.amount_oz} oz`;
+            if (feed.duration_min) details += ` • ${feed.duration_min} min`;
+            if (feed.logged_by) details += ` • ${feed.logged_by}`;
+            return details;
+        }
+
+        function formatTimeAgo(minutes) {
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${Math.floor(minutes)} min ago`;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            if (hours === 1) return mins > 0 ? `${hours} hr ${Math.floor(mins)} min ago` : `${hours} hr ago`;
+            return mins > 0 ? `${hours} hrs ${Math.floor(mins)} min ago` : `${hours} hrs ago`;
+        }
+
+        async function deleteFeed(feedId) {
+            if (!confirm('Delete this feed entry?')) return;
+
+            try {
+                const response = await fetch(`/api/feeds/${feedId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loadFeeds();
+                }
+            } catch (error) {
+                console.error('Error deleting feed:', error);
+            }
+        }
+
+        // Voice recognition
+        function startVoiceRecognition() {
+            if (!recognition) return;
+
+            voiceParsedData = null;
+            document.getElementById('voiceTranscript').textContent = '';
+            document.getElementById('voiceParsedSection').style.display = 'none';
+            document.getElementById('voiceConfirm').style.display = 'none';
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+
+                document.getElementById('voiceTranscript').textContent = transcript;
+
+                // If final result, parse it
+                if (event.results[event.results.length - 1].isFinal) {
+                    parseVoiceInput(transcript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                document.getElementById('voiceTranscript').textContent = 'Error: ' + event.error;
+            };
+
+            recognition.onend = () => {
+                document.getElementById('voiceListening').style.display = 'none';
+            };
+        }
+
+        function parseVoiceInput(transcript) {
+            const lower = transcript.toLowerCase();
+
+            // Parse type
+            let type = null;
+            if (lower.includes('bottle') || lower.includes('fed') || lower.includes('feed')) {
+                type = 'bottle';
+            } else if (lower.includes('nurse') || lower.includes('nursed') || lower.includes('breastfed') || lower.includes('breast')) {
+                type = 'nurse';
+            } else if (lower.includes('pump') || lower.includes('pumped')) {
+                type = 'pump';
+            }
+
+            // Parse side
+            let side = null;
+            if (lower.includes('left')) {
+                side = 'left';
+            } else if (lower.includes('right')) {
+                side = 'right';
+            } else if (lower.includes('both')) {
+                side = 'both';
+            }
+
+            // Parse amount (look for number + "ounce" or "oz")
+            let amount = null;
+            const amountMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:ounce|oz)/);
+            if (amountMatch) {
+                amount = parseFloat(amountMatch[1]);
+            } else {
+                // Try number words
+                const numberWords = {
+                    'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+                    'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10
+                };
+                for (const [word, num] of Object.entries(numberWords)) {
+                    if (lower.includes(word + ' ounce') || lower.includes(word + ' oz')) {
+                        amount = num;
+                        break;
+                    }
+                }
+            }
+
+            // Parse duration (look for number + "minute" or "min")
+            let duration = null;
+            const durationMatch = lower.match(/(\d+)\s*(?:minute|min)/);
+            if (durationMatch) {
+                duration = parseInt(durationMatch[1]);
+            }
+
+            // Store parsed data
+            voiceParsedData = { type, side, amount, duration };
+
+            // Show parsed result
+            const parsedHtml = `
+                <div class="voice-parsed-item"><span class="voice-parsed-label">Type:</span> ${type || 'Not detected'}</div>
+                ${side ? `<div class="voice-parsed-item"><span class="voice-parsed-label">Side:</span> ${side}</div>` : ''}
+                ${amount ? `<div class="voice-parsed-item"><span class="voice-parsed-label">Amount:</span> ${amount} oz</div>` : ''}
+                ${duration ? `<div class="voice-parsed-item"><span class="voice-parsed-label">Duration:</span> ${duration} min</div>` : ''}
+            `;
+
+            document.getElementById('voiceParsed').innerHTML = parsedHtml;
+            document.getElementById('voiceParsedSection').style.display = 'block';
+            document.getElementById('voiceConfirm').style.display = 'block';
+        }
+
+        document.getElementById('voiceConfirm').addEventListener('click', () => {
+            if (voiceParsedData && voiceParsedData.type) {
+                logFeed(voiceParsedData.type, voiceParsedData.side, voiceParsedData.amount);
+            }
+        });
+
+        // Auto-refresh last feed time every 30 seconds
+        setInterval(loadFeeds, 30000);
+
+        // Initial load
+        loadFeeds();
+    </script>
+</body>
+</html>
