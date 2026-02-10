@@ -13,7 +13,7 @@ class TestCreateFeed:
         """Log a bottle feed with amount"""
         response = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0
+            "amount_ml": 90.0
         })
         assert response.status_code == 201
         data = response.get_json()
@@ -36,7 +36,7 @@ class TestCreateFeed:
         response = client.post('/api/feeds', json={
             "type": "pump",
             "side": "both",
-            "amount_oz": 4.0
+            "amount_ml": 120.0
         })
         assert response.status_code == 201
         data = response.get_json()
@@ -47,7 +47,7 @@ class TestCreateFeed:
         before = datetime.now()
         response = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0
+            "amount_ml": 60.0
         })
         after = datetime.now()
 
@@ -66,7 +66,7 @@ class TestCreateFeed:
         timestamp = "2026-02-10T03:00:00"
         response = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0,
+            "amount_ml": 60.0,
             "timestamp": timestamp
         })
         assert response.status_code == 201
@@ -80,7 +80,7 @@ class TestCreateFeed:
         """Log with logged_by field"""
         response = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "logged_by": "Dad"
         })
         assert response.status_code == 201
@@ -103,16 +103,16 @@ class TestCreateFeed:
         assert feeds[0]['notes'] == "baby was fussy"
 
     def test_log_with_zero_amount(self, client):
-        """Log with amount_oz = 0"""
+        """Log with amount_ml = 0"""
         response = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 0
+            "amount_ml": 0
         })
         assert response.status_code == 201
 
         feeds_response = client.get('/api/feeds')
         feeds = feeds_response.get_json()['feeds']
-        assert feeds[0]['amount_oz'] == 0
+        assert feeds[0]['amount_ml'] == 0
 
     def test_log_nurse_without_amount(self, client):
         """Log nurse with no amount (common case)"""
@@ -124,7 +124,7 @@ class TestCreateFeed:
 
         feeds_response = client.get('/api/feeds')
         feeds = feeds_response.get_json()['feeds']
-        assert feeds[0]['amount_oz'] is None or feeds[0]['amount_oz'] == ''
+        assert feeds[0]['amount_ml'] is None or feeds[0]['amount_ml'] == ''
 
 
 class TestReadFeeds:
@@ -135,7 +135,7 @@ class TestReadFeeds:
         # First, add a feed for today
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "timestamp": f"{today_str}T10:00:00"
         })
 
@@ -182,7 +182,7 @@ class TestReadFeeds:
         for ts in timestamps:
             client.post('/api/feeds', json={
                 "type": "bottle",
-                "amount_oz": 1.0,
+                "amount_ml": 30.0,
                 "timestamp": ts
             })
 
@@ -201,7 +201,7 @@ class TestReadFeeds:
 
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "timestamp": thirty_min_ago.isoformat()
         })
 
@@ -212,30 +212,30 @@ class TestReadFeeds:
         assert data['last_feed_minutes_ago'] is not None
         assert 29 <= data['last_feed_minutes_ago'] <= 31
 
-    def test_response_includes_total_oz_today(self, client, today_str):
-        """Response includes total_oz_today"""
+    def test_response_includes_total_ml_today(self, client, today_str):
+        """Response includes total_ml_today"""
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "timestamp": f"{today_str}T10:00:00"
         })
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.5,
+            "amount_ml": 60.0,
             "timestamp": f"{today_str}T11:00:00"
         })
 
         response = client.get('/api/feeds')
         data = response.get_json()
 
-        assert data['total_oz_today'] == 5.5
+        assert data['total_ml_today'] == 150.0
 
     def test_response_includes_total_feeds_today(self, client, today_str):
         """Response includes total_feeds_today"""
         for i in range(3):
             client.post('/api/feeds', json={
                 "type": "bottle",
-                "amount_oz": 2.0,
+                "amount_ml": 60.0,
                 "timestamp": f"{today_str}T{10+i}:00:00"
             })
 
@@ -314,14 +314,14 @@ class TestUpdateFeed:
         # Update amount
         update_response = client.put(f'/api/feeds/{feed_id}', json={
             "type": feed['type'].split()[0].lower(),
-            "amount_oz": 5.0
+            "amount_ml": 150.0
         })
         assert update_response.status_code == 200
 
         # Verify update
         response = client.get('/api/feeds?date=2026-02-10')
         updated_feed = next(f for f in response.get_json()['feeds'] if f['id'] == feed_id)
-        assert updated_feed['amount_oz'] == 5.0
+        assert updated_feed['amount_ml'] == 150.0
 
     def test_update_notes(self, client, seed_data):
         """Update notes of an entry"""
@@ -333,7 +333,7 @@ class TestUpdateFeed:
         # Update notes
         update_response = client.put(f'/api/feeds/{feed_id}', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "notes": "Added note after the fact"
         })
         assert update_response.status_code == 200
@@ -347,6 +347,6 @@ class TestUpdateFeed:
         """Update non-existent entry returns 404"""
         response = client.put('/api/feeds/9999', json={
             "type": "bottle",
-            "amount_oz": 3.0
+            "amount_ml": 90.0
         })
         assert response.status_code == 404

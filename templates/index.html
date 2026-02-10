@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -309,8 +310,15 @@
         }
 
         @keyframes slideUp {
-            from { transform: translateX(-50%) translateY(100px); opacity: 0; }
-            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            from {
+                transform: translateX(-50%) translateY(100px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
         }
 
         .toast-message {
@@ -455,8 +463,17 @@
         }
 
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
         }
 
         .voice-transcript {
@@ -492,13 +509,117 @@
             padding: 20px;
             color: #a8adb8;
         }
+
+        /* Tumbler UI */
+        .tumbler-wrapper {
+            margin-bottom: 20px;
+        }
+
+        .modal-subtitle {
+            text-align: center;
+            color: #a8adb8;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .tumbler-container {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            height: 150px;
+            /* Show 3 items: top, center (selected), bottom */
+            background: #252b3b;
+            border-radius: 12px;
+            padding: 0;
+            /* Remove padding to simplify calculations */
+            position: relative;
+            overflow: hidden;
+            mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+        }
+
+        .tumbler-highlight {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 50px;
+            margin-top: -25px;
+            background: rgba(74, 144, 217, 0.1);
+            border-top: 1px solid #4A90D9;
+            border-bottom: 1px solid #4A90D9;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .tumbler-column {
+            width: 60px;
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            text-align: center;
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+            z-index: 20;
+            padding-top: 50px;
+            /* Space for one item above center */
+            padding-bottom: 50px;
+            /* Space for one item below center */
+            scroll-behavior: smooth;
+        }
+
+        .tumbler-column::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tumbler-item {
+            height: 50px;
+            line-height: 50px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #5c6270;
+            scroll-snap-align: center;
+            transition: all 0.2s;
+        }
+
+        .tumbler-item.active {
+            color: #fff;
+            font-size: 34px;
+            transform: scale(1.1);
+        }
+
+        .tumbler-unit {
+            align-self: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #a8adb8;
+            margin-left: 8px;
+            z-index: 20;
+        }
+
+        .live-clock {
+            font-size: 48px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 24px;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -1px;
+            color: #e8eaed;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <div class="header">
         <h1>🍼 Esmé's Feed Tracker</h1>
     </div>
+
+    <!-- Live Clock -->
+    <div id="liveClock" class="live-clock">--:--</div>
 
     <!-- Who's logging toggle -->
     <div class="who-toggle">
@@ -546,21 +667,24 @@
     <div class="modal" id="bottleModal">
         <div class="modal-content">
             <div class="modal-title">🍼 Bottle Feed</div>
-            <div class="quick-amount-grid">
-                <button class="quick-btn" data-oz="1">1 oz</button>
-                <button class="quick-btn" data-oz="2">2 oz</button>
-                <button class="quick-btn" data-oz="3">3 oz</button>
-                <button class="quick-btn" data-oz="4">4 oz</button>
-                <button class="quick-btn" data-oz="5">5 oz</button>
-                <button class="quick-btn" data-oz="6">6 oz</button>
+
+            <div class="tumbler-wrapper">
+                <div class="modal-subtitle">Select Amount</div>
+                <div class="tumbler-container">
+                    <div class="tumbler-highlight"></div>
+                    <div class="tumbler-column" id="bottleTens"></div>
+                    <div class="tumbler-column" id="bottleOnes"></div>
+                    <div class="tumbler-unit">ml</div>
+                </div>
             </div>
-            <div class="custom-input-group">
-                <label>Custom amount (oz)</label>
-                <input type="number" step="0.5" class="custom-input" id="bottleCustomOz" placeholder="e.g., 3.5">
-            </div>
+
             <div class="expandable">
                 <button class="expandable-toggle" id="bottleMoreToggle">+ More options</button>
                 <div class="expandable-content" id="bottleMoreContent">
+                    <div class="custom-input-group">
+                        <label>Custom amount (ml)</label>
+                        <input type="number" class="custom-input" id="bottleCustomMl" placeholder="Optional override">
+                    </div>
                     <div class="custom-input-group">
                         <label>Duration (minutes)</label>
                         <input type="number" class="custom-input" id="bottleDuration" placeholder="Optional">
@@ -573,6 +697,7 @@
             </div>
             <div class="modal-actions">
                 <button class="modal-btn secondary" id="bottleCancel">Cancel</button>
+                <button class="modal-btn" id="bottleSelect">Select</button>
             </div>
         </div>
     </div>
@@ -613,21 +738,23 @@
                 <button class="side-btn pump-side-btn" data-side="both">Both</button>
             </div>
             <div id="pumpAmountSection" style="display: none;">
-                <div class="quick-amount-grid">
-                    <button class="quick-btn" data-oz="1">1 oz</button>
-                    <button class="quick-btn" data-oz="2">2 oz</button>
-                    <button class="quick-btn" data-oz="3">3 oz</button>
-                    <button class="quick-btn" data-oz="4">4 oz</button>
-                    <button class="quick-btn" data-oz="5">5 oz</button>
-                    <button class="quick-btn" data-oz="6">6 oz</button>
+                <div class="tumbler-wrapper">
+                    <div class="modal-subtitle">Select Amount</div>
+                    <div class="tumbler-container">
+                        <div class="tumbler-highlight"></div>
+                        <div class="tumbler-column" id="pumpTens"></div>
+                        <div class="tumbler-column" id="pumpOnes"></div>
+                        <div class="tumbler-unit">ml</div>
+                    </div>
                 </div>
-                <div class="custom-input-group">
-                    <label>Custom amount (oz)</label>
-                    <input type="number" step="0.5" class="custom-input" id="pumpCustomOz" placeholder="e.g., 3.5">
-                </div>
+
                 <div class="expandable">
                     <button class="expandable-toggle" id="pumpMoreToggle">+ More options</button>
                     <div class="expandable-content" id="pumpMoreContent">
+                        <div class="custom-input-group">
+                            <label>Custom amount (ml)</label>
+                            <input type="number" class="custom-input" id="pumpCustomMl" placeholder="Optional override">
+                        </div>
                         <div class="custom-input-group">
                             <label>Duration (minutes)</label>
                             <input type="number" class="custom-input" id="pumpDuration" placeholder="Optional">
@@ -638,9 +765,13 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" id="pumpCancel">Cancel</button>
+                    <button class="modal-btn" id="pumpSelect">Select</button>
+                </div>
             </div>
-            <div class="modal-actions">
-                <button class="modal-btn secondary" id="pumpCancel">Cancel</button>
+            <div id="pumpInitialActions" class="modal-actions">
+                <button class="modal-btn secondary" id="pumpCancelInitial">Cancel</button>
             </div>
         </div>
     </div>
@@ -653,7 +784,7 @@
                 <p>Listening...</p>
                 <p style="font-size: 14px; color: #a8adb8; margin-top: 8px;">
                     Say something like:<br>
-                    "Bottle 3 ounces"<br>
+                    "Bottle 80 ml"<br>
                     "Nurse left 10 minutes"
                 </p>
             </div>
@@ -721,19 +852,19 @@
         });
 
         // Expandable toggles
-        document.getElementById('bottleMoreToggle').addEventListener('click', function() {
+        document.getElementById('bottleMoreToggle').addEventListener('click', function () {
             const content = document.getElementById('bottleMoreContent');
             content.classList.toggle('active');
             this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
         });
 
-        document.getElementById('nurseMoreToggle').addEventListener('click', function() {
+        document.getElementById('nurseMoreToggle').addEventListener('click', function () {
             const content = document.getElementById('nurseMoreContent');
             content.classList.toggle('active');
             this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
         });
 
-        document.getElementById('pumpMoreToggle').addEventListener('click', function() {
+        document.getElementById('pumpMoreToggle').addEventListener('click', function () {
             const content = document.getElementById('pumpMoreContent');
             content.classList.toggle('active');
             this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
@@ -762,16 +893,18 @@
             modal.classList.add('active');
             // Reset forms
             if (modal === bottleModal) {
-                document.getElementById('bottleCustomOz').value = '';
+                document.getElementById('bottleCustomMl').value = '';
                 document.getElementById('bottleDuration').value = '';
                 document.getElementById('bottleNotes').value = '';
+                initTumblers();
             } else if (modal === nurseModal) {
                 document.getElementById('nurseDuration').value = '';
                 document.getElementById('nurseNotes').value = '';
             } else if (modal === pumpModal) {
                 pumpSelectedSide = null;
                 document.getElementById('pumpAmountSection').style.display = 'none';
-                document.getElementById('pumpCustomOz').value = '';
+                document.getElementById('pumpInitialActions').style.display = 'flex';
+                document.getElementById('pumpCustomMl').value = '';
                 document.getElementById('pumpDuration').value = '';
                 document.getElementById('pumpNotes').value = '';
             } else if (modal === voiceModal) {
@@ -786,22 +919,10 @@
             modal.classList.remove('active');
         }
 
-        // Bottle quick buttons
-        document.querySelectorAll('#bottleModal .quick-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const oz = parseFloat(btn.dataset.oz);
-                logFeed('bottle', null, oz);
-            });
-        });
-
-        // Bottle custom input (log on Enter)
-        document.getElementById('bottleCustomOz').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const oz = parseFloat(e.target.value);
-                if (oz > 0) {
-                    logFeed('bottle', null, oz);
-                }
-            }
+        document.getElementById('bottleSelect').addEventListener('click', () => {
+            const customMl = parseFloat(document.getElementById('bottleCustomMl').value);
+            const ml = customMl || getTumblerValue('bottle');
+            logFeed('bottle', null, ml);
         });
 
         // Nurse side buttons
@@ -817,38 +938,83 @@
             btn.addEventListener('click', () => {
                 pumpSelectedSide = btn.dataset.side;
                 document.getElementById('pumpAmountSection').style.display = 'block';
+                document.getElementById('pumpInitialActions').style.display = 'none';
+
+                // Initialize tumbler if not already
+                initTumblers();
             });
         });
 
-        // Pump quick buttons
-        document.querySelectorAll('#pumpModal .quick-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (pumpSelectedSide) {
-                    const oz = parseFloat(btn.dataset.oz);
-                    logFeed('pump', pumpSelectedSide, oz);
-                }
-            });
-        });
-
-        // Pump custom input
-        document.getElementById('pumpCustomOz').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && pumpSelectedSide) {
-                const oz = parseFloat(e.target.value);
-                if (oz > 0) {
-                    logFeed('pump', pumpSelectedSide, oz);
-                }
+        document.getElementById('pumpSelect').addEventListener('click', () => {
+            if (pumpSelectedSide) {
+                const customMl = parseFloat(document.getElementById('pumpCustomMl').value);
+                const ml = customMl || getTumblerValue('pump');
+                logFeed('pump', pumpSelectedSide, ml);
             }
         });
 
+        document.getElementById('pumpCancelInitial').addEventListener('click', () => closeModal(pumpModal));
+
+        // Tumbler Logic
+        function initTumblers() {
+            if (document.getElementById('bottleTens').children.length === 0) {
+                createTumbler('bottleTens');
+                createTumbler('bottleOnes');
+                createTumbler('pumpTens');
+                createTumbler('pumpOnes');
+            }
+        }
+
+        function createTumbler(elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ''; // Clear existing
+
+            for (let i = 0; i <= 9; i++) {
+                const item = document.createElement('div');
+                item.className = 'tumbler-item';
+                item.textContent = i;
+                container.appendChild(item);
+            }
+
+            // Scroll listener purely for haptic feedback potential or active class updates (optional)
+            // For now, relies on CSS scroll-snap
+            container.addEventListener('scroll', () => {
+                const scrollTop = container.scrollTop;
+                const index = Math.round(scrollTop / 50);
+
+                // Update active state
+                const items = container.querySelectorAll('.tumbler-item');
+                items.forEach((item, i) => {
+                    if (i === index) item.classList.add('active');
+                    else item.classList.remove('active');
+                });
+            });
+
+            // Trigger initial active state
+            const items = container.querySelectorAll('.tumbler-item');
+            if (items.length > 0) items[0].classList.add('active');
+        }
+
+        function getTumblerValue(prefix) {
+            const tensEl = document.getElementById(prefix + 'Tens');
+            const onesEl = document.getElementById(prefix + 'Ones');
+
+            const tens = Math.round(tensEl.scrollTop / 50);
+            const ones = Math.round(onesEl.scrollTop / 50);
+
+            // Bounds check
+            return (Math.min(9, Math.max(0, tens)) * 10) + Math.min(9, Math.max(0, ones));
+        }
+
         // Log feed
-        async function logFeed(type, side = null, amountOz = null) {
+        async function logFeed(type, side = null, amountMl = null) {
             let duration = null;
             let notes = '';
 
             // Get optional fields based on type
             if (type === 'bottle') {
-                if (!amountOz) {
-                    amountOz = parseFloat(document.getElementById('bottleCustomOz').value) || null;
+                if (!amountMl) {
+                    amountMl = parseFloat(document.getElementById('bottleCustomMl').value) || null;
                 }
                 duration = parseInt(document.getElementById('bottleDuration').value) || null;
                 notes = document.getElementById('bottleNotes').value || '';
@@ -856,8 +1022,8 @@
                 duration = parseInt(document.getElementById('nurseDuration').value) || null;
                 notes = document.getElementById('nurseNotes').value || '';
             } else if (type === 'pump') {
-                if (!amountOz) {
-                    amountOz = parseFloat(document.getElementById('pumpCustomOz').value) || null;
+                if (!amountMl) {
+                    amountMl = parseFloat(document.getElementById('pumpCustomMl').value) || null;
                 }
                 duration = parseInt(document.getElementById('pumpDuration').value) || null;
                 notes = document.getElementById('pumpNotes').value || '';
@@ -866,7 +1032,7 @@
             const feedData = {
                 type: type,
                 side: side,
-                amount_oz: amountOz,
+                amount_ml: amountMl,
                 duration_min: duration,
                 notes: notes,
                 logged_by: currentWho,
@@ -892,7 +1058,7 @@
                     closeModal(voiceModal);
 
                     // Show toast
-                    showToast(buildFeedSummary(type, side, amountOz, duration), true);
+                    showToast(buildFeedSummary(type, side, amountMl, duration), true);
 
                     // Refresh feeds
                     loadFeeds();
@@ -903,7 +1069,7 @@
             }
         }
 
-        function buildFeedSummary(type, side, amountOz, duration) {
+        function buildFeedSummary(type, side, amountMl, duration) {
             let summary = '';
             if (type === 'bottle') {
                 summary = '🍼 Bottle';
@@ -915,7 +1081,7 @@
                 if (side) summary += ` (${side})`;
             }
 
-            if (amountOz) summary += ` — ${amountOz} oz`;
+            if (amountMl) summary += ` — ${amountMl} ml`;
             if (duration) summary += ` — ${duration} min`;
 
             return summary + ' logged';
@@ -977,7 +1143,7 @@
 
                 // Update stats
                 const statsText = document.getElementById('statsText');
-                statsText.textContent = `${data.total_feeds_today} feeds • ${data.total_oz_today} oz`;
+                statsText.textContent = `${data.total_feeds_today} feeds • ${data.total_ml_today} ml`;
 
                 // Update feed list
                 const feedList = document.getElementById('feedList');
@@ -1001,7 +1167,7 @@
 
         function buildFeedDetailsText(feed) {
             let details = feed.type;
-            if (feed.amount_oz) details += ` • ${feed.amount_oz} oz`;
+            if (feed.amount_ml) details += ` • ${feed.amount_ml} ml`;
             if (feed.duration_min) details += ` • ${feed.duration_min} min`;
             if (feed.logged_by) details += ` • ${feed.logged_by}`;
             return details;
@@ -1092,21 +1258,30 @@
                 side = 'both';
             }
 
-            // Parse amount (look for number + "ounce" or "oz")
+            // Parse amount (look for number + "ml" or "milliliter")
             let amount = null;
-            const amountMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:ounce|oz)/);
+            const amountMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:ml|milliliter)/);
             if (amountMatch) {
                 amount = parseFloat(amountMatch[1]);
             } else {
-                // Try number words
+                // Try number words (simplified for ml)
                 const numberWords = {
                     'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
                     'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10
                 };
                 for (const [word, num] of Object.entries(numberWords)) {
-                    if (lower.includes(word + ' ounce') || lower.includes(word + ' oz')) {
+                    if (lower.includes(word + ' ml') || lower.includes(word + ' milliliter')) {
                         amount = num;
                         break;
+                    }
+                }
+
+                // Fallback: look for large numbers (>=5) without units
+                if (!amount) {
+                    const trailingNum = lower.match(/\b(\d+)\s*$/);
+                    if (trailingNum) {
+                        const val = parseInt(trailingNum[1]);
+                        if (val >= 5) amount = val;
                     }
                 }
             }
@@ -1125,7 +1300,7 @@
             const parsedHtml = `
                 <div class="voice-parsed-item"><span class="voice-parsed-label">Type:</span> ${type || 'Not detected'}</div>
                 ${side ? `<div class="voice-parsed-item"><span class="voice-parsed-label">Side:</span> ${side}</div>` : ''}
-                ${amount ? `<div class="voice-parsed-item"><span class="voice-parsed-label">Amount:</span> ${amount} oz</div>` : ''}
+                ${amount ? `<div class="voice-parsed-item"><span class="voice-parsed-label">Amount:</span> ${amount} ml</div>` : ''}
                 ${duration ? `<div class="voice-parsed-item"><span class="voice-parsed-label">Duration:</span> ${duration} min</div>` : ''}
             `;
 
@@ -1143,8 +1318,18 @@
         // Auto-refresh last feed time every 30 seconds
         setInterval(loadFeeds, 30000);
 
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            document.getElementById('liveClock').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call
+
         // Initial load
         loadFeeds();
     </script>
 </body>
+
 </html>

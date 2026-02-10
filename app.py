@@ -47,7 +47,7 @@ def init_excel_file():
             ws.title = "Feed Log"
 
             # Headers
-            headers = ["Date", "Time", "Type", "Amount (oz)", "Duration (min)", "Notes", "Logged By", "Timestamp"]
+            headers = ["Date", "Time", "Type", "Amount (ml)", "Duration (min)", "Notes", "Logged By", "Timestamp"]
             ws.append(headers)
 
             # Format headers
@@ -100,8 +100,11 @@ def add_feed_to_excel(feed_data):
             # Parse timestamp
             if isinstance(feed_data.get("timestamp"), str):
                 timestamp = datetime.fromisoformat(feed_data["timestamp"])
+                # Convert to local time if timezone info is present
+                if timestamp.tzinfo is not None:
+                    timestamp = timestamp.astimezone()
             else:
-                timestamp = datetime.now()
+                timestamp = datetime.now().astimezone()
 
             # Format type
             feed_type_str = format_feed_type(
@@ -114,7 +117,7 @@ def add_feed_to_excel(feed_data):
                 timestamp.strftime("%Y-%m-%d"),  # Date
                 timestamp.strftime("%I:%M %p"),  # Time
                 feed_type_str,  # Type
-                feed_data.get("amount_oz"),  # Amount
+                feed_data.get("amount_ml"),  # Amount
                 feed_data.get("duration_min"),  # Duration
                 feed_data.get("notes", ""),  # Notes
                 feed_data.get("logged_by", ""),  # Logged By
@@ -155,7 +158,7 @@ def get_feeds_from_excel(date_filter=None):
                     "date": date_str,
                     "time": time_str,
                     "type": type_str,
-                    "amount_oz": amount,
+                    "amount_ml": amount,
                     "duration_min": duration,
                     "notes": notes or "",
                     "logged_by": logged_by or "",
@@ -206,8 +209,11 @@ def update_feed_in_excel(feed_id, feed_data):
             # Parse timestamp
             if isinstance(feed_data.get("timestamp"), str):
                 timestamp = datetime.fromisoformat(feed_data["timestamp"])
+                # Convert to local time if timezone info is present
+                if timestamp.tzinfo is not None:
+                    timestamp = timestamp.astimezone()
             else:
-                timestamp = datetime.now()
+                timestamp = datetime.now().astimezone()
 
             # Format type
             feed_type_str = format_feed_type(
@@ -219,7 +225,7 @@ def update_feed_in_excel(feed_id, feed_data):
             ws[f"A{row_num}"] = timestamp.strftime("%Y-%m-%d")
             ws[f"B{row_num}"] = timestamp.strftime("%I:%M %p")
             ws[f"C{row_num}"] = feed_type_str
-            ws[f"D{row_num}"] = feed_data.get("amount_oz")
+            ws[f"D{row_num}"] = feed_data.get("amount_ml")
             ws[f"E{row_num}"] = feed_data.get("duration_min")
             ws[f"F{row_num}"] = feed_data.get("notes", "")
             ws[f"G{row_num}"] = feed_data.get("logged_by", "")
@@ -254,7 +260,7 @@ def get_feeds():
     # Calculate stats
     last_feed_minutes_ago = None
     last_feed_summary = None
-    total_oz_today = 0
+    total_ml_today = 0
     total_feeds_today = len(feeds)
 
     if feeds:
@@ -267,7 +273,7 @@ def get_feeds():
         last_feed_minutes_ago = int((datetime.now() - last_timestamp).total_seconds() / 60)
 
         # Build summary
-        amount_str = f"{last_feed['amount_oz']} oz" if last_feed["amount_oz"] else ""
+        amount_str = f"{last_feed['amount_ml']} ml" if last_feed["amount_ml"] else ""
         duration_str = f"{last_feed['duration_min']} min" if last_feed["duration_min"] else ""
         detail_str = " — ".join(filter(None, [amount_str, duration_str]))
 
@@ -276,16 +282,16 @@ def get_feeds():
             last_feed_summary += f" — {detail_str}"
         last_feed_summary += f" at {last_feed['time']}"
 
-        # Calculate total oz
+        # Calculate total ml
         for feed in feeds:
-            if feed["amount_oz"]:
-                total_oz_today += feed["amount_oz"]
+            if feed["amount_ml"]:
+                total_ml_today += feed["amount_ml"]
 
     return jsonify({
         "feeds": feeds,
         "last_feed_minutes_ago": last_feed_minutes_ago,
         "last_feed_summary": last_feed_summary,
-        "total_oz_today": round(total_oz_today, 1),
+        "total_ml_today": round(total_ml_today, 1),
         "total_feeds_today": total_feeds_today
     })
 
@@ -340,25 +346,28 @@ def get_stats():
     today = datetime.now().strftime("%Y-%m-%d")
     feeds = get_feeds_from_excel(today)
 
-    total_oz = 0
+    total_ml = 0
     total_feeds = len(feeds)
     nursing_sessions = 0
-    pump_oz = 0
+    pump_ml = 0
 
     timestamps = []
 
     for feed in feeds:
-        if feed["amount_oz"]:
-            total_oz += feed["amount_oz"]
+        if feed["amount_ml"]:
+            total_ml += feed["amount_ml"]
 
         if "Nurse" in feed["type"]:
             nursing_sessions += 1
 
-        if "Pump" in feed["type"] and feed["amount_oz"]:
-            pump_oz += feed["amount_oz"]
+        if "Pump" in feed["type"] and feed["amount_ml"]:
+            pump_ml += feed["amount_ml"]
 
         if feed["timestamp"]:
-            timestamps.append(datetime.fromisoformat(feed["timestamp"]))
+            dt = datetime.fromisoformat(feed["timestamp"])
+            if dt.tzinfo is not None:
+                dt = dt.replace(tzinfo=None)
+            timestamps.append(dt)
 
     # Calculate average interval
     avg_interval = None
@@ -372,10 +381,10 @@ def get_stats():
 
     return jsonify({
         "today": {
-            "total_oz": round(total_oz, 1),
+            "total_ml": round(total_ml, 1),
             "total_feeds": total_feeds,
             "total_nursing_sessions": nursing_sessions,
-            "total_pump_oz": round(pump_oz, 1),
+            "total_pump_ml": round(pump_ml, 1),
             "avg_feed_interval_min": avg_interval
         }
     })

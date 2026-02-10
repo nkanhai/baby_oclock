@@ -134,15 +134,7 @@ def get_excel_file():
 TypeError: can't subtract offset-naive and offset-aware datetimes
 ```
 
-**The Fix (in `app.py` around line 265):**
-
-```python
-last_timestamp = datetime.fromisoformat(last_feed["timestamp"])
-# Remove timezone info if present to avoid comparison errors
-if last_timestamp.tzinfo is not None:
-    last_timestamp = last_timestamp.replace(tzinfo=None)
-last_feed_minutes_ago = int((datetime.now() - last_timestamp).total_seconds() / 60)
-```
+**The Fix (in `app.py` around line 100 & 200):** Incoming UTC timestamps from the frontend (`new Date().toISOString()`) are converted to the server's local time using `.astimezone()`. Mixed naive/aware timestamps in `get_stats` are handled by stripping timezone info before comparison.
 
 **Why it happened:** Some timestamps were saved with timezone info, others without. This defensively handles both.
 
@@ -356,10 +348,10 @@ Updates feed entry by ID.
 ```json
 {
   "today": {
-    "total_oz": 12.5,
+    "total_ml": 350.0,
     "total_feeds": 5,
     "total_nursing_sessions": 2,
-    "total_pump_oz": 4.0,
+    "total_pump_ml": 120.0,
     "avg_feed_interval_min": 150
   }
 }
