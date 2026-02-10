@@ -4,13 +4,14 @@ A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, min
 
 ## Features
 
-- **Quick logging**: Log a bottle feed in under 5 seconds with 3 taps
-- **Voice input**: Hands-free logging using your phone's built-in speech recognition
+- **Quick logging**: Log a bottle feed in seconds with the intuitive Tumbler UI (0-99 ml)
+- **Voice input**: Hands-free logging using your phone's built-in speech recognition (e.g., "Bottle 90 ml")
 - **Last feed status**: See at a glance how long it's been since the last feed
 - **Today's log**: View all feeds for the day in reverse chronological order
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
 - **Mobile-optimized**: Big touch targets, dark mode, works great on phones
 - **Local network**: Access from any phone on your WiFi — no cloud, no accounts
+- **Large Clock**: See the current time prominently displayed for easy reference
 
 ## Tech Stack
 

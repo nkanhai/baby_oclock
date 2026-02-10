@@ -14,46 +14,41 @@ from voice_parser import parse_voice_input
 class TestBottlePhrases:
     """Test bottle feed voice parsing"""
 
-    def test_bottle_3_ounces(self):
-        result = parse_voice_input("bottle 3 ounces")
+    def test_bottle_90_ml(self):
+        result = parse_voice_input("bottle 90 ml")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 3.0
+        assert result['amount_ml'] == 90.0
 
-    def test_fed_three_ounces(self):
-        result = parse_voice_input("fed three ounces")
+    def test_fed_90_milliliters(self):
+        result = parse_voice_input("fed 90 milliliters")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 3.0
+        assert result['amount_ml'] == 90.0
 
-    def test_3_ounce_bottle(self):
-        result = parse_voice_input("3 ounce bottle")
+    def test_90_ml_bottle(self):
+        result = parse_voice_input("90 ml bottle")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 3.0
+        assert result['amount_ml'] == 90.0
 
-    def test_bottle_feed_2_point_5_oz(self):
-        result = parse_voice_input("bottle feed 2.5 oz")
+    def test_bottle_feed_60_point_5_ml(self):
+        result = parse_voice_input("bottle feed 60.5 ml")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 2.5
+        assert result['amount_ml'] == 60.5
 
-    def test_fed_baby_4_ounces(self):
-        result = parse_voice_input("fed baby 4 ounces")
+    def test_fed_baby_120_ml(self):
+        result = parse_voice_input("fed baby 120 ml")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 4.0
+        assert result['amount_ml'] == 120.0
 
     def test_bottle_no_amount(self):
         result = parse_voice_input("bottle")
         assert result['type'] == 'bottle'
-        assert result['amount'] is None
-
-    def test_fed_2_and_a_half_ounces(self):
-        result = parse_voice_input("fed 2 and a half ounces")
-        assert result['type'] == 'bottle'
-        # This might not parse perfectly with current implementation
-        # May need to enhance parser for this
+        assert result['amount_ml'] is None
 
     def test_feed_with_number_word(self):
-        result = parse_voice_input("feed five ounces")
+        # Testing single digit ml which is rare but supported by logic
+        result = parse_voice_input("feed five ml")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 5.0
+        assert result['amount_ml'] == 5.0
 
 
 class TestNursingPhrases:
@@ -73,7 +68,7 @@ class TestNursingPhrases:
         result = parse_voice_input("breastfed right 10 minutes")
         assert result['type'] == 'nurse'
         assert result['side'] == 'right'
-        assert result['duration'] == 10
+        assert result['duration_min'] == 10
 
     def test_nursing_both_sides(self):
         result = parse_voice_input("nursing both sides")
@@ -87,7 +82,7 @@ class TestNursingPhrases:
         # This test documents current behavior
         if result:
             assert result['side'] == 'left'
-            assert result['duration'] == 15
+            assert result['duration_min'] == 15
 
     def test_nursed_no_side(self):
         result = parse_voice_input("nursed")
@@ -98,35 +93,35 @@ class TestNursingPhrases:
 class TestPumpPhrases:
     """Test pump voice parsing"""
 
-    def test_pumped_4_ounces_both(self):
-        result = parse_voice_input("pumped 4 ounces both")
+    def test_pumped_120_ml_both(self):
+        result = parse_voice_input("pumped 120 ml both")
         assert result['type'] == 'pump'
         assert result['side'] == 'both'
-        assert result['amount'] == 4.0
+        assert result['amount_ml'] == 120.0
 
-    def test_pump_left_2_ounces(self):
-        result = parse_voice_input("pump left 2 ounces")
+    def test_pump_left_60_ml(self):
+        result = parse_voice_input("pump left 60 ml")
         assert result['type'] == 'pump'
         assert result['side'] == 'left'
-        assert result['amount'] == 2.0
+        assert result['amount_ml'] == 60.0
 
-    def test_pumped_right_side_3_oz(self):
-        result = parse_voice_input("pumped right side 3 oz")
+    def test_pumped_right_side_90_ml(self):
+        result = parse_voice_input("pumped right side 90 ml")
         assert result['type'] == 'pump'
         assert result['side'] == 'right'
-        assert result['amount'] == 3.0
+        assert result['amount_ml'] == 90.0
 
-    def test_pump_both_sides_5_ounces(self):
-        result = parse_voice_input("pump both sides 5 ounces")
+    def test_pump_both_sides_150_ml(self):
+        result = parse_voice_input("pump both sides 150 ml")
         assert result['type'] == 'pump'
         assert result['side'] == 'both'
-        assert result['amount'] == 5.0
+        assert result['amount_ml'] == 150.0
 
     def test_pumped_no_details(self):
         result = parse_voice_input("pumped")
         assert result['type'] == 'pump'
         assert result['side'] is None
-        assert result['amount'] is None
+        assert result['amount_ml'] is None
 
 
 class TestAmbiguousEdgeCases:
@@ -140,17 +135,17 @@ class TestAmbiguousEdgeCases:
         result = parse_voice_input("hello")
         assert result is None
 
-    def test_just_3_ounces(self):
-        result = parse_voice_input("3 ounces")
+    def test_just_90_ml(self):
+        result = parse_voice_input("90 ml")
         # Current implementation may not detect type
         # This documents current behavior
         if result:
-            assert result['amount'] == 3.0
+            assert result['amount_ml'] == 90.0
 
     def test_bottle_with_side_ignored(self):
-        result = parse_voice_input("bottle left 3 ounces")
+        result = parse_voice_input("bottle left 90 ml")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 3.0
+        assert result['amount_ml'] == 90.0
         # Side should be ignored for bottles (current implementation will capture it)
         # This tests current behavior
 
@@ -160,69 +155,57 @@ class TestAmbiguousEdgeCases:
         # Current implementation won't detect type
         assert result is None
 
-    def test_nursed_three_ounces_left(self):
-        result = parse_voice_input("nursed three ounces left")
+    def test_nursed_90_ml_left(self):
+        result = parse_voice_input("nursed 90 ml left")
         assert result['type'] == 'nurse'
         assert result['side'] == 'left'
         # Amount might be captured even though unusual for nursing
-        if result['amount']:
-            assert result['amount'] == 3.0
+        if result.get('amount_ml'):
+            assert result['amount_ml'] == 90.0
 
 
 class TestNumberWordConversion:
     """Test number word to digit conversion"""
 
     def test_one(self):
-        result = parse_voice_input("bottle one ounce")
-        assert result['amount'] == 1.0
+        result = parse_voice_input("bottle one ml")
+        assert result['amount_ml'] == 1.0
 
     def test_two(self):
-        result = parse_voice_input("feed two ounces")
-        assert result['amount'] == 2.0
+        result = parse_voice_input("feed two ml")
+        assert result['amount_ml'] == 2.0
 
     def test_three(self):
-        result = parse_voice_input("bottle three ounces")
-        assert result['amount'] == 3.0
+        result = parse_voice_input("bottle three ml")
+        assert result['amount_ml'] == 3.0
 
     def test_four(self):
-        result = parse_voice_input("fed four ounces")
-        assert result['amount'] == 4.0
+        result = parse_voice_input("fed four ml")
+        assert result['amount_ml'] == 4.0
 
     def test_five(self):
-        result = parse_voice_input("bottle five ounces")
-        assert result['amount'] == 5.0
+        result = parse_voice_input("bottle five ml")
+        assert result['amount_ml'] == 5.0
 
     def test_six(self):
-        result = parse_voice_input("feed six ounces")
-        assert result['amount'] == 6.0
+        result = parse_voice_input("feed six ml")
+        assert result['amount_ml'] == 6.0
 
     def test_seven(self):
-        result = parse_voice_input("bottle seven ounces")
-        assert result['amount'] == 7.0
+        result = parse_voice_input("bottle seven ml")
+        assert result['amount_ml'] == 7.0
 
     def test_eight(self):
-        result = parse_voice_input("fed eight ounces")
-        assert result['amount'] == 8.0
+        result = parse_voice_input("fed eight ml")
+        assert result['amount_ml'] == 8.0
 
     def test_nine(self):
-        result = parse_voice_input("bottle nine ounces")
-        assert result['amount'] == 9.0
+        result = parse_voice_input("bottle nine ml")
+        assert result['amount_ml'] == 9.0
 
     def test_ten(self):
-        result = parse_voice_input("feed ten ounces")
-        assert result['amount'] == 10.0
-
-    def test_half(self):
-        result = parse_voice_input("bottle half ounce")
-        assert result['amount'] == 0.5
-
-    def test_two_and_a_half(self):
-        result = parse_voice_input("bottle two and a half ounces")
-        assert result['amount'] == 2.5
-
-    def test_one_and_a_half(self):
-        result = parse_voice_input("fed one and a half ounces")
-        assert result['amount'] == 1.5
+        result = parse_voice_input("feed ten ml")
+        assert result['amount_ml'] == 10.0
 
 
 class TestDuration:
@@ -230,11 +213,11 @@ class TestDuration:
 
     def test_10_minutes(self):
         result = parse_voice_input("nursed left 10 minutes")
-        assert result['duration'] == 10
+        assert result['duration_min'] == 10
 
     def test_15_min(self):
         result = parse_voice_input("nurse right 15 min")
-        assert result['duration'] == 15
+        assert result['duration_min'] == 15
 
     def test_duration_without_type(self):
         result = parse_voice_input("20 minutes")
@@ -246,18 +229,18 @@ class TestCaseSensitivity:
     """Test that parsing is case-insensitive"""
 
     def test_uppercase(self):
-        result = parse_voice_input("BOTTLE 3 OUNCES")
+        result = parse_voice_input("BOTTLE 90 ML")
         assert result['type'] == 'bottle'
-        assert result['amount'] == 3.0
+        assert result['amount_ml'] == 90.0
 
     def test_mixed_case(self):
         result = parse_voice_input("Nursed Left 10 Minutes")
         assert result['type'] == 'nurse'
         assert result['side'] == 'left'
-        assert result['duration'] == 10
+        assert result['duration_min'] == 10
 
     def test_lowercase(self):
-        result = parse_voice_input("pumped both 4 oz")
+        result = parse_voice_input("pumped both 120 ml")
         assert result['type'] == 'pump'
         assert result['side'] == 'both'
-        assert result['amount'] == 4.0
+        assert result['amount_ml'] == 120.0

@@ -18,7 +18,7 @@ class TestConcurrentWrites:
             try:
                 resp = client.post('/api/feeds', json={
                     "type": "bottle",
-                    "amount_oz": amount,
+                    "amount_ml": amount,
                     "logged_by": "Mom"
                 })
                 results.append(('success', resp.status_code, amount))
@@ -27,8 +27,8 @@ class TestConcurrentWrites:
 
         # Fire two POSTs simultaneously
         threads = [
-            threading.Thread(target=post_feed, args=(3.0,)),
-            threading.Thread(target=post_feed, args=(2.5,))
+            threading.Thread(target=post_feed, args=(90.0,)),
+            threading.Thread(target=post_feed, args=(75.0,))
         ]
 
         for t in threads:
@@ -49,8 +49,8 @@ class TestConcurrentWrites:
 
         # Verify both amounts are present
         amounts = [row[3] for row in ws.iter_rows(min_row=2, values_only=True)]
-        assert 3.0 in amounts
-        assert 2.5 in amounts
+        assert 90.0 in amounts
+        assert 75.0 in amounts
 
     def test_five_rapid_fire_posts(self, client, temp_xlsx):
         """Five threads POST at once"""
@@ -59,13 +59,14 @@ class TestConcurrentWrites:
         def post_feed(amount):
             resp = client.post('/api/feeds', json={
                 "type": "bottle",
-                "amount_oz": amount,
+                "amount_ml": amount,
                 "logged_by": "Mom" if amount % 2 == 0 else "Dad"
             })
             results.append(resp.status_code)
 
         # Fire 5 POSTs simultaneously
-        threads = [threading.Thread(target=post_feed, args=(i,)) for i in range(1, 6)]
+        # Using ml values 30, 60, 90, 120, 150
+        threads = [threading.Thread(target=post_feed, args=(i * 30,)) for i in range(1, 6)]
 
         for t in threads:
             t.start()
@@ -90,7 +91,7 @@ class TestConcurrentWrites:
             for i in range(10):
                 resp = client.post('/api/feeds', json={
                     "type": "bottle",
-                    "amount_oz": 2.0
+                    "amount_ml": 60.0
                 })
                 results['post'] = resp.status_code
 
@@ -118,7 +119,7 @@ class TestConcurrentWrites:
         for i in range(10):
             resp = client.post('/api/feeds', json={
                 "type": "bottle",
-                "amount_oz": float(i + 1)
+                "amount_ml": float((i + 1) * 30)
             })
             assert resp.status_code == 201
 
@@ -131,14 +132,14 @@ class TestConcurrentWrites:
     def test_no_duplicate_entries(self, client, temp_xlsx):
         """Single POST creates exactly one row"""
         # Count rows before
-        client.post('/api/feeds', json={"type": "bottle", "amount_oz": 1.0})
+        client.post('/api/feeds', json={"type": "bottle", "amount_ml": 30.0})
         wb = load_workbook(temp_xlsx)
         rows_before = wb.active.max_row
 
         # Post once more
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0
+            "amount_ml": 60.0
         })
 
         # Count rows after
@@ -163,7 +164,7 @@ class TestConcurrentWrites:
         def create_feed():
             resp = client.post('/api/feeds', json={
                 "type": "bottle",
-                "amount_oz": 5.0
+                "amount_ml": 150.0
             })
             results.append(('create', resp.status_code))
 

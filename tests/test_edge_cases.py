@@ -15,14 +15,14 @@ class TestEdgeCases:
         # Log at 11:59 PM on Feb 9
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0,
+            "amount_ml": 60.0,
             "timestamp": "2026-02-09T23:59:00"
         })
 
         # Log at 12:01 AM on Feb 10
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "timestamp": "2026-02-10T00:01:00"
         })
 
@@ -45,7 +45,7 @@ class TestEdgeCases:
         # Fresh file should work
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0
+            "amount_ml": 90.0
         })
 
         assert resp.status_code == 201
@@ -61,7 +61,7 @@ class TestEdgeCases:
 
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0,
+            "amount_ml": 60.0,
             "notes": long_notes
         })
 
@@ -79,7 +79,7 @@ class TestEdgeCases:
 
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "notes": unicode_notes
         })
 
@@ -93,7 +93,7 @@ class TestEdgeCases:
         """Amount with many decimal places is handled"""
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.333333
+            "amount_ml": 75.333333
         })
 
         assert resp.status_code == 201
@@ -102,14 +102,14 @@ class TestEdgeCases:
         feed = feeds_resp.get_json()['feeds'][0]
 
         # Should be stored (may be rounded, but should be close)
-        assert feed['amount_oz'] is not None
-        assert 2.3 <= feed['amount_oz'] <= 2.4
+        assert feed['amount_ml'] is not None
+        assert 75.3 <= feed['amount_ml'] <= 75.4
 
     def test_post_with_extra_unknown_fields(self, client):
         """POST with unknown fields ignores them and succeeds"""
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0,
+            "amount_ml": 90.0,
             "foo": "bar",
             "unknown_field": 123
         })
@@ -131,7 +131,7 @@ class TestEdgeCases:
         """POST with null values is handled"""
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": None,
+            "amount_ml": None,
             "duration_min": None,
             "notes": None
         })
@@ -141,7 +141,7 @@ class TestEdgeCases:
 
         feeds_resp = client.get('/api/feeds')
         feed = feeds_resp.get_json()['feeds'][0]
-        assert feed['amount_oz'] is None or feed['amount_oz'] == ''
+        assert feed['amount_ml'] is None or feed['amount_ml'] == ''
 
     def test_get_with_future_date(self, client):
         """GET with future date returns empty list"""
@@ -166,7 +166,7 @@ class TestEdgeCases:
         # Create one entry
         post_resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0
+            "amount_ml": 90.0
         })
         assert post_resp.status_code == 201
 
@@ -195,7 +195,7 @@ class TestEdgeCases:
         # Immediately create
         create_resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 4.0
+            "amount_ml": 120.0
         })
         assert create_resp.status_code == 201
 
@@ -211,7 +211,7 @@ class TestEdgeCases:
     def test_missing_content_type_header(self, client):
         """Missing Content-Type header is handled"""
         resp = client.post('/api/feeds',
-                          data='{"type": "bottle", "amount_oz": 3.0}')
+                          data='{"type": "bottle", "amount_ml": 90.0}')
 
         # Should either work or fail gracefully
         assert resp.status_code in [200, 201, 400, 415]
@@ -222,7 +222,7 @@ class TestEdgeCases:
 
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0,
+            "amount_ml": 60.0,
             "notes": notes_with_newlines
         })
 
@@ -238,7 +238,7 @@ class TestEdgeCases:
 
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0,
+            "amount_ml": 60.0,
             "notes": notes_with_quotes
         })
 
@@ -252,7 +252,7 @@ class TestEdgeCases:
         """Empty string notes are handled"""
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0,
+            "amount_ml": 60.0,
             "notes": ""
         })
 
@@ -266,7 +266,7 @@ class TestEdgeCases:
         """Very large amount is handled"""
         resp = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 99.0
+            "amount_ml": 9999.0
         })
 
         # Should succeed (no validation for max amount currently)

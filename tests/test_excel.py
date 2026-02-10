@@ -20,7 +20,7 @@ class TestExcelIntegrity:
         # Make a request to add data
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.0
+            "amount_ml": 90.0
         })
 
         # Verify data was written
@@ -30,13 +30,13 @@ class TestExcelIntegrity:
     def test_header_row_correct(self, client, temp_xlsx):
         """Header row has correct column names"""
         # Ensure file exists
-        client.post('/api/feeds', json={"type": "bottle", "amount_oz": 1.0})
+        client.post('/api/feeds', json={"type": "bottle", "amount_ml": 30.0})
 
         wb = load_workbook(temp_xlsx)
         ws = wb.active
 
         headers = [cell.value for cell in ws[1]]
-        expected = ["Date", "Time", "Type", "Amount (oz)", "Duration (min)", "Notes", "Logged By", "Timestamp"]
+        expected = ["Date", "Time", "Type", "Amount (ml)", "Duration (min)", "Notes", "Logged By", "Timestamp"]
 
         assert headers == expected
 
@@ -44,7 +44,7 @@ class TestExcelIntegrity:
         """Entry in Excel matches what API returned"""
         response = client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 3.5,
+            "amount_ml": 105.0,
             "duration_min": 10,
             "notes": "test note",
             "logged_by": "Dad"
@@ -62,7 +62,7 @@ class TestExcelIntegrity:
         date_str, time_str, type_str, amount, duration, notes, logged_by, timestamp = last_row
 
         assert type_str == "Feed (Bottle)"
-        assert amount == 3.5
+        assert amount == 105.0
         assert duration == 10
         assert notes == "test note"
         assert logged_by == "Dad"
@@ -103,7 +103,7 @@ class TestExcelIntegrity:
         for i in range(5):
             client.post('/api/feeds', json={
                 "type": "bottle",
-                "amount_oz": float(i + 1)
+                "amount_ml": float((i + 1) * 30)
             })
 
         wb = load_workbook(temp_xlsx)
@@ -118,7 +118,7 @@ class TestExcelIntegrity:
 
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.0,
+            "amount_ml": 60.0,
             "notes": special_notes
         })
 
@@ -134,7 +134,7 @@ class TestExcelIntegrity:
         """Amount precision is preserved"""
         client.post('/api/feeds', json={
             "type": "bottle",
-            "amount_oz": 2.5
+            "amount_ml": 75.5
         })
 
         wb = load_workbook(temp_xlsx)
@@ -143,7 +143,7 @@ class TestExcelIntegrity:
         last_row = list(ws.iter_rows(min_row=ws.max_row, max_row=ws.max_row, values_only=True))[0]
         amount = last_row[3]  # Amount column
 
-        assert amount == 2.5
+        assert amount == 75.5
 
     def test_file_valid_after_many_writes(self, client, temp_xlsx):
         """File remains valid after many writes"""
@@ -151,14 +151,14 @@ class TestExcelIntegrity:
         for i in range(50):
             client.post('/api/feeds', json={
                 "type": "bottle",
-                "amount_oz": 2.0
+                "amount_ml": 60.0
             })
 
         # File should still be readable
         wb = load_workbook(temp_xlsx)
         ws = wb.active
 
-        # Should have 51 rows: 1 header + 50 data
+        # Should have 51 rows: 1 header + 5 data
         assert ws.max_row == 51
 
         # Verify we can read all rows
@@ -197,7 +197,7 @@ class TestExcelIntegrity:
         # Update it
         client.put(f'/api/feeds/{feed_id}', json={
             "type": "bottle",
-            "amount_oz": 7.5,
+            "amount_ml": 220.0,
             "notes": "Updated note"
         })
 
@@ -212,5 +212,5 @@ class TestExcelIntegrity:
         amount = row[3]
         notes = row[5]
 
-        assert amount == 7.5
+        assert amount == 220.0
         assert notes == "Updated note"
