@@ -15,7 +15,9 @@ import socket
 app = Flask(__name__)
 
 # Excel file path - configurable for testing
-app.config['FEED_FILE'] = os.environ.get('FEED_FILE', 'feeds.xlsx')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_FEED_FILE = os.path.join(BASE_DIR, 'feeds.xlsx')
+app.config['FEED_FILE'] = os.environ.get('FEED_FILE', DEFAULT_FEED_FILE)
 
 # Thread lock for file writes
 file_lock = threading.Lock()

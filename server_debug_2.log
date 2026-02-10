@@ -1,0 +1,31 @@
+
+
+Starting Baby Tracker...
+Open on your phone: http://192.168.0.238:5000
+
+✓ Created feeds_test.xlsx
+
+============================================================
+🍼 Baby Feed Tracker
+============================================================
+
+📱 Open on your phone:
+   http://192.168.0.126:8080
+
+💻 Or on this computer:
+   http://localhost:8080
+
+📊 Data saved to: /Users/nicholaskanhai/Documents/Coding_Projects/Esme_oClock/baby_oclock/feeds_test.xlsx
+
+Press Ctrl+C to stop
+
+============================================================
+
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://192.168.0.126:8080
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [10/Feb/2026 18:12:49] "GET /api/stats HTTP/1.1" 200 -
