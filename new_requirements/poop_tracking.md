@@ -122,7 +122,7 @@ html<!-- OLD: Voice button -->
 
 <!-- NEW: Diaper button -->
 <button class="action-btn diaper" id="diaperBtn">
-    <span class="emoji">🩱</span>
+    <span class="emoji">🍑</span>
     <span>Diaper</span>
 </button>
 Add diaper CSS styles (add after pump styles, around line 140):
@@ -150,7 +150,7 @@ File: baby_oclock/templates/index.html
 Add diaper modal after pumpModal (around line 850):
 html<div class="modal" id="diaperModal">
     <div class="modal-content">
-        <div class="modal-title">🩱 Diaper Change</div>
+        <div class="modal-title">🍑 Diaper Change</div>
 
         <div class="side-selector">
             <button class="side-btn diaper-side-btn" data-type="pee">💧 Pee</button>
