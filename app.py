@@ -89,6 +89,15 @@ def format_feed_type(feed_type, side=None):
             return "Pump (Right)"
         else:
             return "Pump (Both)"
+    elif feed_type == "diaper":
+        if side == "pee":
+            return "Diaper (Pee)"
+        elif side == "poop":
+            return "Diaper (Poop)"
+        elif side == "both":
+            return "Diaper (Both)"
+        else:
+            return "Diaper"
     return feed_type
 
 
@@ -283,6 +292,8 @@ def get_feeds():
     # Calculate stats
     last_feed_minutes_ago = None
     last_feed_summary = None
+    last_diaper_minutes_ago = None
+    last_diaper_summary = None
     total_ml_today = 0
     total_feeds_today = len(feeds)
 
@@ -305,6 +316,16 @@ def get_feeds():
             last_feed_summary += f" — {detail_str}"
         last_feed_summary += f" at {last_feed['time']}"
 
+        # Calculate last diaper change
+        for feed in feeds:
+            if "Diaper" in feed["type"]:
+                last_diaper_timestamp = datetime.fromisoformat(feed["timestamp"])
+                if last_diaper_timestamp.tzinfo is not None:
+                    last_diaper_timestamp = last_diaper_timestamp.replace(tzinfo=None)
+                last_diaper_minutes_ago = int((datetime.now() - last_diaper_timestamp).total_seconds() / 60)
+                last_diaper_summary = f"{feed['type']} at {feed['time']}"
+                break
+
         # Calculate total ml
         for feed in feeds:
             if feed["amount_ml"]:
@@ -314,6 +335,8 @@ def get_feeds():
         "feeds": feeds,
         "last_feed_minutes_ago": last_feed_minutes_ago,
         "last_feed_summary": last_feed_summary,
+        "last_diaper_minutes_ago": last_diaper_minutes_ago,
+        "last_diaper_summary": last_diaper_summary,
         "total_ml_today": round(total_ml_today, 1),
         "total_feeds_today": total_feeds_today
     })
@@ -373,6 +396,7 @@ def get_stats():
     total_feeds = len(feeds)
     nursing_sessions = 0
     pump_ml = 0
+    diaper_changes = 0
 
     timestamps = []
 
@@ -385,6 +409,9 @@ def get_stats():
 
         if "Pump" in feed["type"] and feed["amount_ml"]:
             pump_ml += feed["amount_ml"]
+
+        if "Diaper" in feed["type"]:
+            diaper_changes += 1
 
         if feed["timestamp"]:
             dt = datetime.fromisoformat(feed["timestamp"])
@@ -408,7 +435,8 @@ def get_stats():
             "total_feeds": total_feeds,
             "total_nursing_sessions": nursing_sessions,
             "total_pump_ml": round(pump_ml, 1),
-            "avg_feed_interval_min": avg_interval
+            "avg_feed_interval_min": avg_interval,
+            "total_diaper_changes": diaper_changes
         }
     })
 

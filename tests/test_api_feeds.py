@@ -128,6 +128,14 @@ class TestCreateFeed:
         feeds = feeds_response.get_json()['feeds']
         assert feeds[0]['amount_ml'] is None or feeds[0]['amount_ml'] == ''
 
+    def test_log_diaper_change(self, client):
+        """Log a diaper change"""
+        response = client.post('/api/feeds', json={
+            "type": "diaper",
+            "side": "pee"
+        })
+        assert response.status_code == 201
+
 
 class TestReadFeeds:
     """Test GET /api/feeds"""
