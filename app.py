@@ -136,8 +136,8 @@ def add_feed_to_excel(feed_data):
             raise
 
 
-def get_feeds_from_excel(date_filter=None):
-    """Read feeds from Excel, optionally filtered by date."""
+def get_feeds_from_excel(date_filter=None, min_date=None):
+    """Read feeds from Excel, optionally filtered by specific date or date range."""
     with file_lock:
         try:
             wb = load_workbook(get_excel_file())
@@ -150,8 +150,12 @@ def get_feeds_from_excel(date_filter=None):
 
                 date_str, time_str, type_str, amount, duration, notes, logged_by, timestamp_str = row[:8]
 
-                # Filter by date if requested
+                # Filter by specific date if requested
                 if date_filter and date_str != date_filter:
+                    continue
+
+                # Filter by min_date if requested (for history range)
+                if min_date and date_str < min_date:
                     continue
 
                 feeds.append({
@@ -213,7 +217,12 @@ def update_feed_in_excel(feed_id, feed_data):
                 # Always convert to local system time
                 timestamp = timestamp.astimezone(None)
             else:
-                timestamp = datetime.now().astimezone(None)
+                # Preserve existing timestamp if not provided
+                existing_ts_str = ws[f"H{row_num}"].value
+                if existing_ts_str:
+                    timestamp = datetime.fromisoformat(existing_ts_str)
+                else:
+                    timestamp = datetime.now().astimezone(None)
 
             # Format type
             feed_type_str = format_feed_type(
@@ -248,11 +257,25 @@ def index():
 @app.route("/api/feeds", methods=["GET"])
 def get_feeds():
     """Get feed entries for a specific date (defaults to today)."""
+    # Check for limit_days parameter (history view)
+    limit_days = request.args.get("limit_days", type=int)
     date_filter = request.args.get("date")
-    if not date_filter:
-        date_filter = datetime.now().strftime("%Y-%m-%d")
 
-    feeds = get_feeds_from_excel(date_filter)
+    if limit_days:
+        # Calculate start date (Today - limit_days)
+        # Note: limit_days=1 means today + yesterday (last 24h extended to specific days)
+        # Actually logic: if limit=7, we want today + 6 previous days = 7 days total?
+        # Or just previous N days.
+        # User asked for "7 days". Let's do Today + 6 past days.
+        start_date = (datetime.now() - timedelta(days=limit_days)).strftime("%Y-%m-%d")
+        feeds = get_feeds_from_excel(min_date=start_date)
+    elif not date_filter:
+        # Default to today
+        date_filter = datetime.now().strftime("%Y-%m-%d")
+        feeds = get_feeds_from_excel(date_filter)
+    else:
+        # Specific date requested
+        feeds = get_feeds_from_excel(date_filter)
 
     # Sort by timestamp descending (most recent first)
     feeds.sort(key=lambda x: x["timestamp"], reverse=True)

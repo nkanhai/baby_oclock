@@ -605,6 +605,54 @@
             color: #e8eaed;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
+
+        /* Grouped History */
+        details.feed-group {
+            margin-bottom: 20px;
+        }
+
+        summary.group-header {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4A90D9;
+            margin-bottom: 12px;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            user-select: none;
+        }
+
+        summary.group-header::-webkit-details-marker {
+            display: none;
+        }
+
+        summary.group-header::after {
+            content: '+';
+            font-size: 24px;
+            font-weight: 300;
+            color: #a8adb8;
+            transition: transform 0.2s;
+        }
+
+        details.feed-group[open] summary.group-header::after {
+            transform: rotate(45deg);
+        }
+
+        /* Special styling for Today/Yesterday headers (no toggle icon if we force open? or just keep consistent) */
+        details.feed-group.highlight-group summary.group-header {
+            color: #fff;
+            font-size: 22px;
+            border-bottom: 1px solid #3d4556;
+            margin-bottom: 16px;
+        }
+
+        details.feed-group.highlight-group summary.group-header::after {
+            display: none;
+            /* Always open, no toggle needed */
+        }
     </style>
 </head>
 
@@ -648,7 +696,7 @@
 
     <!-- Today's log -->
     <div class="log-section">
-        <div class="log-header">
+        <div class="log-header" style="display:none"> <!-- Hidden in favor of grouped headers -->
             <span>Today's Log</span>
             <span class="stats-summary" id="statsText">—</span>
         </div>
@@ -1120,7 +1168,8 @@
         // Load feeds
         async function loadFeeds() {
             try {
-                const response = await fetch('/api/feeds');
+                // Fetch 7 days of history as per requirements
+                const response = await fetch('/api/feeds?limit_days=7');
                 const data = await response.json();
 
                 // Update last feed
@@ -1140,24 +1189,148 @@
                 statsText.textContent = `${data.total_feeds_today} feeds • ${data.total_ml_today} ml`;
 
                 // Update feed list
+                // Update stats (global or just today?)
+                // API returns stats for "today" in top level fields still?
+                // Actually `total_feeds_today` comes from `get_feeds`.
+                // If we request limit_days, the backend calculates stats based on returned feeds?
+                // Wait, backend `get_feeds`:
+                // total_ml_today calculated from `feeds`. If `feeds` has 7 days, it sums 7 days?
+                // Let's verify backend logic.
+                // Backend: "for feed in feeds: total_ml_today += feed['amount_ml']"
+                // YES! Backend sums everything in the response!
+                // We likely want to calculate "Today's" stats in JS now if the API returns 7 days.
+                // Or we accept that "Today's Log" stats at the top might be misleading if we don't filter.
+                // Let's filter on frontend for the top stats.
+
+                // Filter feeds for today for stats
+                const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time (approx)
+                // Actually backend returns YYYY-MM-DD.
+                // Let's use the first group if it matches today.
+
+                // Group feeds
+                const groups = groupFeedsByDate(data.feeds);
+                const sortedDates = Object.keys(groups).sort().reverse();
+
+                // Render
                 const feedList = document.getElementById('feedList');
+
                 if (data.feeds.length === 0) {
-                    feedList.innerHTML = '<div class="empty-state">No feeds logged yet today.<br>Tap a button above to start tracking!</div>';
+                    feedList.innerHTML = '<div class="empty-state">No feeds logged in the last 7 days.<br>Tap a button above to start tracking!</div>';
                 } else {
-                    feedList.innerHTML = data.feeds.map(feed => `
-                        <div class="feed-item">
-                            <div class="feed-info">
-                                <div class="feed-time">${feed.time}</div>
-                                <div class="feed-details">${buildFeedDetailsText(feed)}</div>
-                            </div>
-                            <button class="feed-delete" onclick="deleteFeed(${feed.id})">×</button>
-                        </div>
-                    `).join('');
+                    let html = '';
+                    sortedDates.forEach(date => {
+                        const dayFeeds = groups[date];
+                        const isToday = isDateToday(date);
+                        const isYesterday = isDateYesterday(date);
+
+                        let label = formatDateLabel(date);
+                        let openAttr = (isToday || isYesterday) ? 'open' : '';
+                        let checkClass = (isToday || isYesterday) ? 'highlight-group' : '';
+
+                        // Recalculate stats for this group
+                        let groupMl = 0;
+                        let groupCount = dayFeeds.length;
+                        dayFeeds.forEach(f => { if (f.amount_ml) groupMl += f.amount_ml; });
+                        const groupStats = `${groupCount} feeds • ${Math.round(groupMl)} ml`;
+
+                        html += `
+                            <details class="feed-group ${checkClass}" ${openAttr}>
+                                <summary class="group-header">
+                                    <span>${label}</span>
+                                    <span style="font-size: 14px; color: #a8adb8; font-weight: normal; margin-right: 10px;">${groupStats}</span>
+                                </summary>
+                                <div class="group-content">
+                                    ${dayFeeds.map(feed => renderFeedItem(feed)).join('')}
+                                </div>
+                            </details>
+                        `;
+                    });
+                    feedList.innerHTML = html;
+
+                    // Update main stats text to show TODAY's stats specifically
+                    // We can match "todayStr" from backend format.
+                    // Actually, let's grab the group for today.
+                    // The backend `total_ml_today` is now "Total ML in response".
+                    // We should recalculate Today's stats here or update backend to separate them.
+                    // Easiest is JS recalc.
+                    // We effectively did it above for the group header.
+                    // Let's update the global stats text if "Today" exists.
+                    // Get today's date string from backend response? No, construct it.
+                    // Backend returns `feed.date` as "YYYY-MM-DD".
+                    // We need to match that.
+                    // Just find the group that isToday.
+
+                    // Find today group
+                    // Helper to get YYYY-MM-DD local
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const todayKey = `${year}-${month}-${day}`;
+
+                    const todayGroup = groups[todayKey] || [];
+                    let todayMl = 0;
+                    todayGroup.forEach(f => { if (f.amount_ml) todayMl += f.amount_ml; });
+
+                    const statsText = document.getElementById('statsText');
+                    statsText.textContent = `${todayGroup.length} feeds • ${Math.round(todayMl)} ml (Today)`;
                 }
             } catch (error) {
                 console.error('Error loading feeds:', error);
             }
         }
+
+        function groupFeedsByDate(feeds) {
+            const groups = {};
+            feeds.forEach(feed => {
+                if (!groups[feed.date]) groups[feed.date] = [];
+                groups[feed.date].push(feed);
+            });
+            return groups;
+        }
+
+        function isDateToday(dateStr) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return dateStr === `${year}-${month}-${day}`;
+        }
+
+        function isDateYesterday(dateStr) {
+            const yester = new Date();
+            yester.setDate(yester.getDate() - 1);
+            const year = yester.getFullYear();
+            const month = String(yester.getMonth() + 1).padStart(2, '0');
+            const day = String(yester.getDate()).padStart(2, '0');
+            return dateStr === `${year}-${month}-${day}`;
+        }
+
+        function formatDateLabel(dateStr) {
+            if (isDateToday(dateStr)) return 'Today';
+            if (isDateYesterday(dateStr)) return 'Yesterday';
+
+            // Format as "Monday, 02/10"
+            const parts = dateStr.split('-');
+            // parts[0] is year, parts[1] is month, parts[2] is day
+            // Construct date object safely (avoid timezone shifts)
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            const options = { weekday: 'long', month: 'numeric', day: 'numeric' };
+            return dateObj.toLocaleDateString('en-US', options);
+        }
+
+        function renderFeedItem(feed) {
+            return `
+                <div class="feed-item">
+                    <div class="feed-info">
+                        <div class="feed-time">${feed.time}</div>
+                        <div class="feed-details">${buildFeedDetailsText(feed)}</div>
+                    </div>
+                    <button class="feed-delete" onclick="deleteFeed(${feed.id})">×</button>
+                </div>
+            `;
+        }
+
 
         function buildFeedDetailsText(feed) {
             let details = feed.type;
