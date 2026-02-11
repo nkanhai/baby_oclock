@@ -270,7 +270,8 @@ Returns the HTML UI (`templates/index.html`)
 
 ### GET /api/feeds
 **Query Params:**
-- `date` (optional): YYYY-MM-DD format, defaults to today
+- `date` (optional): YYYY-MM-DD format, defaults to today (if `limit_days` not strictly provided)
+- `limit_days` (optional): Integer (e.g. 7). If provided, returns feeds for the last N days.
 
 **Returns:**
 ```json
@@ -405,6 +406,7 @@ setInterval(loadFeeds, 30000);  // 30 seconds
 7. Toast shows "✓ Bottle — 90 ml logged"
 8. `loadFeeds()` refreshes the feed list
 9. Stats update
+10. **Display**: Feeds are grouped by date (Today, Yesterday, etc.) in the UI.
 
 **Gotcha:** If the POST fails (network error, server down), the modal still closes and toast still shows success. There's minimal error handling.
 

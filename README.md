@@ -8,6 +8,7 @@ A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, min
 - **Voice input**: Hands-free logging using your phone's built-in speech recognition (e.g., "Bottle 90 ml")
 - **Last feed status**: See at a glance how long it's been since the last feed
 - **Today's log**: View all feeds for the day in reverse chronological order
+- **History**: View the last 7 days of feeds, grouped by Today, Yesterday, and date
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
 - **Mobile-optimized**: Big touch targets, dark mode, works great on phones
 - **Local network**: Access from any phone on your WiFi — no cloud, no accounts
