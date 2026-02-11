@@ -281,7 +281,7 @@ Returns the HTML UI (`templates/index.html`)
       "date": "2026-02-10",
       "time": "3:02 AM",
       "type": "Feed (Bottle)",
-      "amount_oz": 3.0,
+      "amount_ml": 90,
       "duration_min": null,
       "notes": "",
       "logged_by": "Dad",
@@ -289,8 +289,8 @@ Returns the HTML UI (`templates/index.html`)
     }
   ],
   "last_feed_minutes_ago": 47,
-  "last_feed_summary": "Bottle — 3 oz at 3:02 AM",
-  "total_oz_today": 12.5,
+  "last_feed_summary": "Bottle — 90 ml at 3:02 AM",
+  "total_ml_today": 370,
   "total_feeds_today": 5
 }
 ```
@@ -303,7 +303,7 @@ Returns the HTML UI (`templates/index.html`)
 {
   "type": "bottle",        // "bottle", "nurse", or "pump"
   "side": null,            // "left", "right", "both", or null (for bottles)
-  "amount_oz": 3.0,        // float or null
+  "amount_ml": 90,         // integer or null
   "duration_min": 10,      // integer or null
   "notes": "",             // string
   "logged_by": "Mom",      // string
@@ -398,11 +398,11 @@ setInterval(loadFeeds, 30000);  // 30 seconds
 
 1. User taps "🍼 Bottle"
 2. Modal opens (`openModal(bottleModal)`)
-3. User taps "3 oz"
-4. `logFeed('bottle', null, 3.0)` called
+3. User selects "90 ml"
+4. `logFeed('bottle', null, 90)` called
 5. POST to `/api/feeds`
 6. Modal closes (`closeModal(bottleModal)`)
-7. Toast shows "✓ Bottle — 3 oz logged"
+7. Toast shows "✓ Bottle — 90 ml logged"
 8. `loadFeeds()` refreshes the feed list
 9. Stats update
 
@@ -517,7 +517,7 @@ CREATE TABLE feeds (
     date TEXT NOT NULL,
     time TEXT NOT NULL,
     type TEXT NOT NULL,
-    amount_oz REAL,
+    amount_ml INTEGER,
     duration_min INTEGER,
     notes TEXT,
     logged_by TEXT,
