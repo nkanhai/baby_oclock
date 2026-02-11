@@ -525,13 +525,12 @@
         .tumbler-container {
             display: flex;
             justify-content: center;
-            gap: 16px;
-            height: 150px;
+            gap: 20px;
+            height: 180px;
             /* Show 3 items: top, center (selected), bottom */
             background: #252b3b;
             border-radius: 12px;
             padding: 0;
-            /* Remove padding to simplify calculations */
             position: relative;
             overflow: hidden;
             mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
@@ -543,8 +542,8 @@
             top: 50%;
             left: 0;
             right: 0;
-            height: 50px;
-            margin-top: -25px;
+            height: 60px;
+            margin-top: -30px;
             background: rgba(74, 144, 217, 0.1);
             border-top: 1px solid #4A90D9;
             border-bottom: 1px solid #4A90D9;
@@ -553,20 +552,16 @@
         }
 
         .tumbler-column {
-            width: 60px;
+            width: 80px;
             height: 100%;
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             text-align: center;
             -ms-overflow-style: none;
-            /* IE and Edge */
             scrollbar-width: none;
-            /* Firefox */
             z-index: 20;
-            padding-top: 50px;
-            /* Space for one item above center */
-            padding-bottom: 50px;
-            /* Space for one item below center */
+            padding-top: 60px;
+            padding-bottom: 60px;
             scroll-behavior: smooth;
         }
 
@@ -575,9 +570,9 @@
         }
 
         .tumbler-item {
-            height: 50px;
-            line-height: 50px;
-            font-size: 28px;
+            height: 60px;
+            line-height: 60px;
+            font-size: 32px;
             font-weight: 700;
             color: #5c6270;
             scroll-snap-align: center;
@@ -586,16 +581,16 @@
 
         .tumbler-item.active {
             color: #fff;
-            font-size: 34px;
+            font-size: 42px;
             transform: scale(1.1);
         }
 
         .tumbler-unit {
             align-self: center;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             color: #a8adb8;
-            margin-left: 8px;
+            margin-left: 10px;
             z-index: 20;
         }
 
@@ -603,7 +598,8 @@
             font-size: 48px;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 24px;
+            margin-top: 8px;
+            margin-bottom: 8px;
             font-variant-numeric: tabular-nums;
             letter-spacing: -1px;
             color: #e8eaed;
@@ -616,10 +612,8 @@
     <!-- Header -->
     <div class="header">
         <h1>🍼 Esmé's Feed Tracker</h1>
+        <div id="liveClock" class="live-clock">--:--</div>
     </div>
-
-    <!-- Live Clock -->
-    <div id="liveClock" class="live-clock">--:--</div>
 
     <!-- Who's logging toggle -->
     <div class="who-toggle">
@@ -980,7 +974,7 @@
             // For now, relies on CSS scroll-snap
             container.addEventListener('scroll', () => {
                 const scrollTop = container.scrollTop;
-                const index = Math.round(scrollTop / 50);
+                const index = Math.round(scrollTop / 60);
 
                 // Update active state
                 const items = container.querySelectorAll('.tumbler-item');
@@ -999,8 +993,8 @@
             const tensEl = document.getElementById(prefix + 'Tens');
             const onesEl = document.getElementById(prefix + 'Ones');
 
-            const tens = Math.round(tensEl.scrollTop / 50);
-            const ones = Math.round(onesEl.scrollTop / 50);
+            const tens = Math.round(tensEl.scrollTop / 60);
+            const ones = Math.round(onesEl.scrollTop / 60);
 
             // Bounds check
             return (Math.min(9, Math.max(0, tens)) * 10) + Math.min(9, Math.max(0, ones));

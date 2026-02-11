@@ -22,7 +22,7 @@ if command -v hostname &> /dev/null; then
         IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)
     fi
     if [ -n "$IP" ]; then
-        echo "Open on your phone: http://$IP:5000"
+        echo "Open on your phone: http://$IP:8080"
     fi
 fi
 echo ""

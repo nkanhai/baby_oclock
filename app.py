@@ -102,11 +102,10 @@ def add_feed_to_excel(feed_data):
             # Parse timestamp
             if isinstance(feed_data.get("timestamp"), str):
                 timestamp = datetime.fromisoformat(feed_data["timestamp"])
-                # Convert to local time if timezone info is present
-                if timestamp.tzinfo is not None:
-                    timestamp = timestamp.astimezone()
+                # Always convert to local system time
+                timestamp = timestamp.astimezone(None)
             else:
-                timestamp = datetime.now().astimezone()
+                timestamp = datetime.now().astimezone(None)
 
             # Format type
             feed_type_str = format_feed_type(
@@ -211,11 +210,10 @@ def update_feed_in_excel(feed_id, feed_data):
             # Parse timestamp
             if isinstance(feed_data.get("timestamp"), str):
                 timestamp = datetime.fromisoformat(feed_data["timestamp"])
-                # Convert to local time if timezone info is present
-                if timestamp.tzinfo is not None:
-                    timestamp = timestamp.astimezone()
+                # Always convert to local system time
+                timestamp = timestamp.astimezone(None)
             else:
-                timestamp = datetime.now().astimezone()
+                timestamp = datetime.now().astimezone(None)
 
             # Format type
             feed_type_str = format_feed_type(
