@@ -59,6 +59,8 @@ class TestCreateFeed:
         latest_feed = feeds[0]  # Most recent first
 
         feed_time = datetime.fromisoformat(latest_feed['timestamp'])
+        if feed_time.tzinfo:
+            feed_time = feed_time.replace(tzinfo=None)
         assert before <= feed_time <= after + timedelta(seconds=5)
 
     def test_log_with_explicit_timestamp(self, client):
