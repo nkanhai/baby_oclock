@@ -1,14 +1,16 @@
 # 🍼 Baby Feed Tracker for Esmé
 
-A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, minimal steps, and all data saved to an Excel file you can open anytime.
+A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big buttons, minimal steps, and all data saved to an Excel file you can open anytime.
 
 ## Features
 
 - **Quick logging**: Log a bottle feed in seconds with the intuitive Tumbler UI (0-99 ml)
-- **Voice input**: Hands-free logging using your phone's built-in speech recognition (e.g., "Bottle 90 ml")
+- **Diaper tracking**: Log pee, poop, or both with 2 taps — see "last diaper change" timer on home screen
+- **Voice input**: Hands-free logging using your phone's built-in speech recognition (hidden behind feature flag)
 - **Last feed status**: See at a glance how long it's been since the last feed
+- **Last diaper status**: See how long since the last diaper change
 - **Today's log**: View all feeds for the day in reverse chronological order
-- **History**: View the last 7 days of feeds, grouped by Today, Yesterday, and date
+- **History**: View the last 7 days of feeds and diaper changes, grouped by Today, Yesterday, and date
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
 - **Mobile-optimized**: Big touch targets, dark mode, works great on phones
 - **Local network**: Access from any phone on your WiFi — no cloud, no accounts
@@ -67,7 +69,7 @@ A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, min
 1. **Bottle**: Tap 🍼 → Select amount (ml) → Done
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
-4. **Voice**: Tap 🎤 → Say "Bottle 100 ml" or "Nurse left 10 minutes" → Confirm
+4. **Diaper**: Tap 🩱 → Select type (Pee/Poop/Both) → Done
 
 ### Voice Input Examples
 
@@ -88,7 +90,7 @@ All feeds are saved to `feeds.xlsx` in the project directory. The Excel file con
 |--------|-------------|
 | Date | Date of feed (YYYY-MM-DD) |
 | Time | Time of feed (12-hour format) |
-| Type | Feed (Bottle), Nurse (Left/Right/Both), or Pump (Left/Right/Both) |
+| Type | Feed (Bottle), Nurse (Left/Right/Both), Pump (Left/Right/Both), or Diaper (Pee/Poop/Both) |
 | Amount (ml) | Quantity in milliliters |
 | Duration (min) | Duration in minutes (optional) |
 | Notes | Free-text notes (optional) |
@@ -127,7 +129,7 @@ ipconfig
 
 3. **Quick bottle logging**: The tumbler interface makes selecting amounts (e.g. 90-120 ml) very fast.
 
-4. **Voice is great for nursing**: When you're nursing and can't reach the phone, just say "Nurse left" and confirm.
+4. **Quick diaper logging**: Tap Diaper → tap Pee/Poop/Both — done in 2 taps.
 
 5. **Leave it running**: The server can run 24/7 on a laptop. Both parents can log from their phones anytime.
 
@@ -136,7 +138,7 @@ ipconfig
 ## Troubleshooting
 
 **Q: Voice button doesn't appear**
-A: Voice input requires Safari (iOS) or Chrome (Android). If your browser doesn't support the Web Speech API, the voice button will be hidden.
+A: Voice input is currently disabled by default behind a feature flag. To enable it, set `FEATURE_FLAGS.VOICE_INPUT_ENABLED = true` in the `<script>` section of `templates/index.html`. Voice input requires Safari (iOS) or Chrome (Android).
 
 **Q: Can't access from phone**
 A: Make sure both your computer and phone are on the same WiFi network. Check your firewall settings — port 8080 needs to be open.
@@ -155,6 +157,7 @@ baby-tracker/
 ├── templates/
 │   └── index.html         # Single-page UI
 ├── feeds.xlsx             # Auto-created data file
+├── tests/                 # 117+ automated tests
 ├── requirements.txt       # Python dependencies
 ├── README.md              # This file
 └── start.sh               # One-command launcher
@@ -175,8 +178,8 @@ A sleep-deprived parent at 3am can:
 1. ✅ Open the bookmark on their phone
 2. ✅ See immediately how long it's been since the last feed
 3. ✅ Log a bottle feed in under 5 seconds and 3 taps
-4. ✅ Optionally use voice to log hands-free
-5. ✅ See today's feed history at a glance
+4. ✅ Log a diaper change in 2 taps
+5. ✅ See today's feed and diaper history at a glance
 6. ✅ Know that all data is safely written to an Excel file they can open anytime
 
 ---

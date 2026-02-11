@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a **mobile-first web application** for tracking baby feeding sessions (bottle, nursing, pump). Built for **sleep-deprived parents** using their phones at 3am, so simplicity and reliability are paramount.
+This is a **mobile-first web application** for tracking baby feeding sessions (bottle, nursing, pump) and diaper changes (pee, poop, both). Built for **sleep-deprived parents** using their phones at 3am, so simplicity and reliability are paramount.
 
 **Target Users:** Two parents (Mom & Dad) simultaneously logging feeds on their phones
 **Critical Requirement:** No data loss when both parents log feeds at the exact same time
@@ -40,9 +40,10 @@ Esme_oClock/
 ├── venv/                           # Virtual environment
 ├── requirements.txt                # flask, openpyxl
 ├── requirements-test.txt           # pytest, pytest-flask
-├── tests/                          # 111 automated tests
+├── tests/                          # 117+ automated tests
 │   ├── conftest.py                 # Test fixtures
 │   ├── test_api_feeds.py           # CRUD endpoint tests
+│   ├── test_diaper.py              # Diaper tracking tests
 │   ├── test_excel.py               # Data integrity tests
 │   ├── test_concurrent.py          # Thread safety tests
 │   ├── test_edge_cases.py          # Boundary condition tests
@@ -74,7 +75,7 @@ Esme_oClock/
 |--------|------|-------------|---------|
 | Date | String (YYYY-MM-DD) | Date of feed | "2026-02-10" |
 | Time | String (HH:MM AM/PM) | Time in 12-hour format | "3:02 AM" |
-| Type | String | Formatted feed type | "Feed (Bottle)", "Nurse (Left)", "Pump (Both)" |
+| Type | String | Formatted feed type | "Feed (Bottle)", "Nurse (Left)", "Pump (Both)", "Diaper (Pee)" |
 | Amount (oz) | Float or blank | Quantity in ounces | 3.5 |
 | Duration (min) | Integer or blank | Duration in minutes | 12 |
 | Notes | String | Free text | "baby was fussy" |
@@ -161,10 +162,19 @@ def format_feed_type(feed_type, side=None):
         if side == "left":
             return "Pump (Left)"
         # ... etc
+    elif feed_type == "diaper":
+        if side == "pee":
+            return "Diaper (Pee)"
+        elif side == "poop":
+            return "Diaper (Poop)"
+        elif side == "both":
+            return "Diaper (Both)"
+        else:
+            return "Diaper"
 ```
 
-**API accepts:** `{"type": "bottle", "side": null}`
-**Excel stores:** `"Feed (Bottle)"`
+**API accepts:** `{"type": "bottle", "side": null}` or `{"type": "diaper", "side": "pee"}`
+**Excel stores:** `"Feed (Bottle)"` or `"Diaper (Pee)"`
 
 **Why:** Makes Excel file human-readable. Parents can open it and immediately understand what each entry means.
 
@@ -302,8 +312,8 @@ Returns the HTML UI (`templates/index.html`)
 **Request Body:**
 ```json
 {
-  "type": "bottle",        // "bottle", "nurse", or "pump"
-  "side": null,            // "left", "right", "both", or null (for bottles)
+  "type": "bottle",        // "bottle", "nurse", "pump", or "diaper"
+  "side": null,            // "left", "right", "both" (nurse/pump) or "pee", "poop", "both" (diaper)
   "amount_ml": 90,         // integer or null
   "duration_min": 10,      // integer or null
   "notes": "",             // string
@@ -353,9 +363,56 @@ Updates feed entry by ID.
     "total_feeds": 5,
     "total_nursing_sessions": 2,
     "total_pump_ml": 120.0,
-    "avg_feed_interval_min": 150
+    "avg_feed_interval_min": 150,
+    "total_diaper_changes": 3
   }
 }
+```
+
+---
+
+### Diaper Tracking
+
+**Added:** February 2026
+
+The app tracks diaper changes using the same infrastructure as feed tracking.
+
+**Types:**
+- Pee only (`side: "pee"`)
+- Poop only (`side: "poop"`)
+- Both (`side: "both"`)
+
+**Excel Format:**
+- Stored as: `"Diaper (Pee)"`, `"Diaper (Poop)"`, `"Diaper (Both)"`
+- Uses the "side" parameter (repurposed from nurse/pump functionality)
+
+**API:**
+```json
+POST /api/feeds
+{
+    "type": "diaper",
+    "side": "pee",
+    "notes": "Optional notes",
+    "logged_by": "Mom"
+}
+```
+
+**Stats:**
+- `total_diaper_changes` - Count of diaper changes today
+- `last_diaper_minutes_ago` - Minutes since last diaper change
+- `last_diaper_summary` - Description of last diaper change
+
+### Feature Flags
+
+**VOICE_INPUT_ENABLED** (default: false)
+- Controls visibility of voice input button and modal
+- Set to `true` in JavaScript to enable voice functionality
+- Location: `templates/index.html`, top of `<script>` section
+
+```javascript
+const FEATURE_FLAGS = {
+    VOICE_INPUT_ENABLED: false  // Set to true to enable voice functionality
+};
 ```
 
 ---
@@ -418,7 +475,7 @@ setInterval(loadFeeds, 30000);  // 30 seconds
 
 ### Test Structure
 
-**Total Tests:** 111
+**Total Tests:** 117+
 **Execution Time:** ~1.3 seconds
 **All passing:** ✅
 
@@ -501,6 +558,11 @@ pytest tests/test_api_feeds.py::TestCreateFeed::test_log_bottle_feed_with_amount
 5. **Update Excel**:
    - Type column already supports any string
    - No schema changes needed
+
+**Example (Diaper Tracking - Implemented Feb 2026):**
+Diaper tracking was added by reusing the `side` parameter for pee/poop/both.
+The `format_feed_type()` function maps `{"type": "diaper", "side": "pee"}` → `"Diaper (Pee)"`.
+Frontend uses the same modal pattern with type-selection buttons that call `logFeed('diaper', type)`.
 
 ### Migrating to SQLite
 

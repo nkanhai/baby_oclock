@@ -114,6 +114,24 @@
             border-color: #9b87e8;
         }
 
+        .action-btn.diaper {
+            border-color: #9C87E8;
+        }
+
+        .action-btn.diaper:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(156, 135, 232, 0.3);
+        }
+
+        .diaper-side-btn {
+            border-color: #9C87E8;
+        }
+
+        .diaper-side-btn.selected {
+            background: #9C87E8;
+            color: white;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -692,6 +710,10 @@
             <span class="emoji">🎤</span>
             <span>Voice</span>
         </button>
+        <button class="action-btn diaper" id="diaperBtn">
+            <span class="emoji">🩱</span>
+            <span>Diaper</span>
+        </button>
     </div>
 
     <!-- Today's log -->
@@ -818,6 +840,33 @@
         </div>
     </div>
 
+    <div class="modal" id="diaperModal">
+        <div class="modal-content">
+            <div class="modal-title">🩱 Diaper Change</div>
+
+            <div class="side-selector">
+                <button class="side-btn diaper-side-btn" data-type="pee">💧 Pee</button>
+                <button class="side-btn diaper-side-btn" data-type="poop">💩 Poop</button>
+                <button class="side-btn diaper-side-btn" data-type="both">Both</button>
+            </div>
+
+            <div class="expandable">
+                <button class="expandable-toggle" id="diaperMoreToggle">+ More options</button>
+                <div class="expandable-content" id="diaperMoreContent">
+                    <div class="custom-input-group">
+                        <label>Notes</label>
+                        <input type="text" class="custom-input" id="diaperNotes"
+                            placeholder="Optional notes (e.g., blowout, rash)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="diaperCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="voiceModal">
         <div class="modal-content">
             <div class="modal-title">🎤 Voice Input</div>
@@ -848,6 +897,11 @@
     </div>
 
     <script>
+        // Feature Flags
+        const FEATURE_FLAGS = {
+            VOICE_INPUT_ENABLED: false  // Set to true to enable voice functionality
+        };
+
         // State
         let currentWho = 'Mom';
         let lastCreatedFeedId = null;
@@ -873,14 +927,15 @@
         const bottleModal = document.getElementById('bottleModal');
         const nurseModal = document.getElementById('nurseModal');
         const pumpModal = document.getElementById('pumpModal');
+        const diaperModal = document.getElementById('diaperModal');
         const voiceModal = document.getElementById('voiceModal');
 
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toastMessage');
         const toastUndo = document.getElementById('toastUndo');
 
-        // Hide voice button if not supported
-        if (!recognition) {
+        // Hide voice button if not supported or disabled
+        if (!FEATURE_FLAGS.VOICE_INPUT_ENABLED || !recognition) {
             voiceBtn.style.display = 'none';
         }
 
@@ -912,12 +967,19 @@
             this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
         });
 
+        document.getElementById('diaperMoreToggle').addEventListener('click', function () {
+            const content = document.getElementById('diaperMoreContent');
+            content.classList.toggle('active');
+            this.textContent = content.classList.contains('active') ? '− Less options' : '+ More options';
+        });
+
         // Modal open/close
         bottleBtn.addEventListener('click', () => openModal(bottleModal));
         nurseBtn.addEventListener('click', () => openModal(nurseModal));
         pumpBtn.addEventListener('click', () => openModal(pumpModal));
+        document.getElementById('diaperBtn').addEventListener('click', () => openModal(diaperModal));
         voiceBtn.addEventListener('click', () => {
-            if (recognition) {
+            if (FEATURE_FLAGS.VOICE_INPUT_ENABLED && recognition) {
                 openModal(voiceModal);
                 startVoiceRecognition();
             }
@@ -926,6 +988,7 @@
         document.getElementById('bottleCancel').addEventListener('click', () => closeModal(bottleModal));
         document.getElementById('nurseCancel').addEventListener('click', () => closeModal(nurseModal));
         document.getElementById('pumpCancel').addEventListener('click', () => closeModal(pumpModal));
+        document.getElementById('diaperCancel').addEventListener('click', () => closeModal(diaperModal));
         document.getElementById('voiceCancel').addEventListener('click', () => {
             if (recognition) recognition.stop();
             closeModal(voiceModal);
@@ -954,6 +1017,8 @@
                 document.getElementById('voiceParsedSection').style.display = 'none';
                 document.getElementById('voiceConfirm').style.display = 'none';
                 document.getElementById('voiceListening').style.display = 'block';
+            } else if (modal === diaperModal) {
+                document.getElementById('diaperNotes').value = '';
             }
         }
 
@@ -996,6 +1061,14 @@
         });
 
         document.getElementById('pumpCancelInitial').addEventListener('click', () => closeModal(pumpModal));
+
+        // Diaper action buttons
+        document.querySelectorAll('#diaperModal .side-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+                logFeed('diaper', type);
+            });
+        });
 
         // Tumbler Logic
         function initTumblers() {
@@ -1069,6 +1142,8 @@
                 }
                 duration = parseInt(document.getElementById('pumpDuration').value) || null;
                 notes = document.getElementById('pumpNotes').value || '';
+            } else if (type === 'diaper') {
+                notes = document.getElementById('diaperNotes').value || '';
             }
 
             const feedData = {
@@ -1097,6 +1172,7 @@
                     closeModal(bottleModal);
                     closeModal(nurseModal);
                     closeModal(pumpModal);
+                    closeModal(diaperModal);
                     closeModal(voiceModal);
 
                     // Show toast
@@ -1120,6 +1196,9 @@
                 if (side) summary += ` (${side})`;
             } else if (type === 'pump') {
                 summary = '💧 Pump';
+                if (side) summary += ` (${side})`;
+            } else if (type === 'diaper') {
+                summary = '🩱 Diaper';
                 if (side) summary += ` (${side})`;
             }
 
@@ -1182,6 +1261,25 @@
                     `;
                 } else {
                     lastFeedContainer.innerHTML = '<div class="last-feed-none">No feeds logged today</div>';
+                }
+
+                // Display last diaper change timer
+                if (data.last_diaper_minutes_ago !== null) {
+                    const hours = Math.floor(data.last_diaper_minutes_ago / 60);
+                    const mins = data.last_diaper_minutes_ago % 60;
+                    let timeStr = hours > 0 ? `${hours}h ${mins}m ago` : `${mins}m ago`;
+
+                    lastFeedContainer.innerHTML += `
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #404554;">
+                            <div style="font-size: 14px; color: #a8adb8;">Last diaper change</div>
+                            <div style="font-size: 24px; font-weight: 600; color: #9C87E8; margin-top: 4px;">
+                                ${timeStr}
+                            </div>
+                            <div style="font-size: 13px; color: #8a8f9e; margin-top: 2px;">
+                                ${data.last_diaper_summary}
+                            </div>
+                        </div>
+                    `;
                 }
 
                 // Update stats
