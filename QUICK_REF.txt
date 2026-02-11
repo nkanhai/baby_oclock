@@ -4,10 +4,14 @@
 
 START SERVER
 ────────────────────────────────────────────────────────────────
-  $ ./start.sh
+  1. Open Terminal
+  2. Navigate to folder:
+     $ cd ~/Documents/Coding_Projects/Esme_oClock/baby_oclock
+  3. Start the app:
+     $ ./start.sh
 
   Look for:
-    📱 Open on your phone: http://192.168.x.x:5000
+    📱 Open on your phone: http://192.168.x.x:8080 (NOT 5000)
     📊 Data saved to: feeds.xlsx
 
 STOP SERVER
@@ -17,36 +21,36 @@ STOP SERVER
 ACCESS FROM PHONE
 ────────────────────────────────────────────────────────────────
   1. Open Safari (iOS) or Chrome (Android)
-  2. Go to: http://192.168.x.x:5000 (use IP from terminal)
+  2. Go to: http://192.168.x.x:8080 (use IP from terminal)
   3. Bookmark to home screen for quick access
 
 LOGGING FEEDS
 ────────────────────────────────────────────────────────────────
-  Bottle:  Tap 🍼 → Select oz (1-6) → Done
+  Bottle:  Tap 🍼 → Select amount (ml) → Done
   Nurse:   Tap 🤱 → Select side → Done
-  Pump:    Tap 💧 → Select side → Select oz → Done
-  Voice:   Tap 🎤 → Say "Bottle 3 ounces" → Confirm
+  Pump:    Tap 💧 → Select side → Select amount → Done
+  Voice:   Tap 🎤 → Say "Bottle 120 ml" → Confirm
 
 VOICE EXAMPLES
 ────────────────────────────────────────────────────────────────
-  "Bottle 3 ounces"
+  "Bottle 120 ml"
   "Nurse left 10 minutes"
-  "Pump both 4 oz"
-  "Fed three ounces"
+  "Pump both 150 ml"
+  "Fed 90 ml"
 
 DATA FILE
 ────────────────────────────────────────────────────────────────
-  Location: feeds.xlsx
+  Location: feeds.xlsx (in baby_oclock folder)
   Open in:  Excel, Google Sheets, Numbers, LibreOffice
 
 TROUBLESHOOTING
 ────────────────────────────────────────────────────────────────
   Can't access from phone?
     • Both devices on same WiFi?
-    • Firewall blocking port 5000?
+    • Firewall blocking port 8080?
 
-  Port 5000 in use?
-    • macOS: Disable AirPlay Receiver in System Settings
+  Port 8080 in use?
+    • Check if another instance is running
     • Or edit app.py to use different port
 
   Voice not working?
@@ -56,7 +60,7 @@ TROUBLESHOOTING
 QUICK TIPS
 ────────────────────────────────────────────────────────────────
   • Toggle Mom/Dad at the top to set who's logging
-  • Most common amounts (1-6 oz) are one tap
+  • Large tumbler makes picking amounts easy
   • Tap Undo within 5 seconds if you make a mistake
   • Tap × to delete any entry
   • "Time since last feed" updates every 30 seconds
@@ -69,7 +73,7 @@ EMERGENCY
 ────────────────────────────────────────────────────────────────
   If server crashes at 3am:
     1. Open terminal
-    2. cd to project folder
+    2. cd ~/Documents/Coding_Projects/Esme_oClock/baby_oclock
     3. ./start.sh
     4. Refresh phone browser
 

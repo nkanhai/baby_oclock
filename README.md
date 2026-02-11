@@ -51,10 +51,10 @@ A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, min
 4. The app will display URLs like:
    ```
    📱 Open on your phone:
-      http://192.168.1.123:5000
+      http://192.168.1.123:8080
 
    💻 Or on this computer:
-      http://localhost:5000
+      http://localhost:8080
    ```
 
 5. **On your phone**: Open the URL and bookmark it to your home screen for quick access
@@ -63,21 +63,21 @@ A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, min
 
 ### Tracking Feeds
 
-1. **Bottle**: Tap 🍼 → Select amount (1-6 oz or custom) → Done
+1. **Bottle**: Tap 🍼 → Select amount (ml) → Done
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
-4. **Voice**: Tap 🎤 → Say "Bottle 3 ounces" or "Nurse left 10 minutes" → Confirm
+4. **Voice**: Tap 🎤 → Say "Bottle 100 ml" or "Nurse left 10 minutes" → Confirm
 
 ### Voice Input Examples
 
 The voice parser handles natural language:
 
-- "Bottle 3 ounces"
-- "Fed three ounces"
+- "Bottle 90 ml"
+- "Fed 120 ml"
 - "Nurse left"
 - "Nursed on the right for 10 minutes"
-- "Pump both 4 oz"
-- "Pumped both sides 4 ounces"
+- "Pump both 150 ml"
+- "Pumped both sides 180 ml"
 
 ### Data Storage
 
@@ -88,7 +88,7 @@ All feeds are saved to `feeds.xlsx` in the project directory. The Excel file con
 | Date | Date of feed (YYYY-MM-DD) |
 | Time | Time of feed (12-hour format) |
 | Type | Feed (Bottle), Nurse (Left/Right/Both), or Pump (Left/Right/Both) |
-| Amount (oz) | Quantity in ounces |
+| Amount (ml) | Quantity in milliliters |
 | Duration (min) | Duration in minutes (optional) |
 | Notes | Free-text notes (optional) |
 | Logged By | Who logged it (Mom/Dad) |
@@ -98,7 +98,7 @@ You can open this file in Excel, Google Sheets, or Numbers anytime to view or an
 
 ## Network Access
 
-The app binds to `0.0.0.0:5000` so it's accessible on your local network. Both parents can access it from their phones as long as they're on the same WiFi.
+The app binds to `0.0.0.0:8080` so it's accessible on your local network. Both parents can access it from their phones as long as they're on the same WiFi.
 
 ### Finding Your IP Address
 
@@ -124,7 +124,7 @@ ipconfig
 
 2. **Use the "Who" toggle**: Switch between Mom/Dad at the top so you don't have to select it each time.
 
-3. **Quick bottle logging**: The most common amounts (1-6 oz) are one tap away. For the first few weeks, you'll probably use 2-3 oz most often.
+3. **Quick bottle logging**: The tumbler interface makes selecting amounts (e.g. 90-120 ml) very fast.
 
 4. **Voice is great for nursing**: When you're nursing and can't reach the phone, just say "Nurse left" and confirm.
 
@@ -138,7 +138,7 @@ ipconfig
 A: Voice input requires Safari (iOS) or Chrome (Android). If your browser doesn't support the Web Speech API, the voice button will be hidden.
 
 **Q: Can't access from phone**
-A: Make sure both your computer and phone are on the same WiFi network. Check your firewall settings — port 5000 needs to be open.
+A: Make sure both your computer and phone are on the same WiFi network. Check your firewall settings — port 8080 needs to be open.
 
 **Q: Excel file is corrupted**
 A: The app includes basic corruption detection. If the file gets corrupted, it will back up the old file and create a new one.
