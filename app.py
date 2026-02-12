@@ -14,6 +14,13 @@ import socket
 
 app = Flask(__name__)
 
+
+def parse_iso_timestamp(ts_string):
+    """Parse ISO format timestamp, handling 'Z' suffix that Python 3.9 doesn't support."""
+    if ts_string.endswith('Z'):
+        ts_string = ts_string[:-1] + '+00:00'
+    return datetime.fromisoformat(ts_string)
+
 # Excel file path - configurable for testing
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_FEED_FILE = os.path.join(BASE_DIR, 'feeds.xlsx')
@@ -110,7 +117,7 @@ def add_feed_to_excel(feed_data):
 
             # Parse timestamp
             if isinstance(feed_data.get("timestamp"), str):
-                timestamp = datetime.fromisoformat(feed_data["timestamp"])
+                timestamp = parse_iso_timestamp(feed_data["timestamp"])
                 # Always convert to local system time
                 timestamp = timestamp.astimezone(None)
             else:
@@ -222,14 +229,14 @@ def update_feed_in_excel(feed_id, feed_data):
 
             # Parse timestamp
             if isinstance(feed_data.get("timestamp"), str):
-                timestamp = datetime.fromisoformat(feed_data["timestamp"])
+                timestamp = parse_iso_timestamp(feed_data["timestamp"])
                 # Always convert to local system time
                 timestamp = timestamp.astimezone(None)
             else:
                 # Preserve existing timestamp if not provided
                 existing_ts_str = ws[f"H{row_num}"].value
                 if existing_ts_str:
-                    timestamp = datetime.fromisoformat(existing_ts_str)
+                    timestamp = parse_iso_timestamp(existing_ts_str)
                 else:
                     timestamp = datetime.now().astimezone(None)
 
@@ -300,7 +307,7 @@ def get_feeds():
     if feeds:
         # Most recent feed
         last_feed = feeds[0]
-        last_timestamp = datetime.fromisoformat(last_feed["timestamp"])
+        last_timestamp = parse_iso_timestamp(last_feed["timestamp"])
         # Remove timezone info if present to avoid comparison errors
         if last_timestamp.tzinfo is not None:
             last_timestamp = last_timestamp.replace(tzinfo=None)
@@ -319,7 +326,7 @@ def get_feeds():
         # Calculate last diaper change
         for feed in feeds:
             if "Diaper" in feed["type"]:
-                last_diaper_timestamp = datetime.fromisoformat(feed["timestamp"])
+                last_diaper_timestamp = parse_iso_timestamp(feed["timestamp"])
                 if last_diaper_timestamp.tzinfo is not None:
                     last_diaper_timestamp = last_diaper_timestamp.replace(tzinfo=None)
                 last_diaper_minutes_ago = int((datetime.now() - last_diaper_timestamp).total_seconds() / 60)
@@ -414,7 +421,7 @@ def get_stats():
             diaper_changes += 1
 
         if feed["timestamp"]:
-            dt = datetime.fromisoformat(feed["timestamp"])
+            dt = parse_iso_timestamp(feed["timestamp"])
             if dt.tzinfo is not None:
                 dt = dt.replace(tzinfo=None)
             timestamps.append(dt)
