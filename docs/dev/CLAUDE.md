@@ -291,6 +291,27 @@ This bug was fixed in commit that reordered keyword checks.
 **Gotcha (Fixed Bug):** Previously, opening the edit modal would reset the time to "now" because `openModal` didn't distinguish between new and edit modes.
 **Fix:** `openModal` now checks `if (editingFeedId === null)` before setting the time to "now".
 
+### 10. Client-Side Logic Updates (Feb 2026)
+
+**Next Feed Timer:**
+- Calculated entirely in client (JS).
+- Logic: Last non-diaper feed time + 3 hours.
+- Updates every time `loadFeeds()` runs.
+- **Visuals:** Shows "Next feed in..." or red "Overdue by..." text.
+
+**Daily Goal Progress:**
+- Tracks "Today's" total milk intake vs 500ml goal.
+- **Visuals:** Progress bar with gradient (Blue → Purple).
+- **Thresholds:**
+  - < 400ml: "Keep going"
+  - 400-449ml: "Minimum met"
+  - 450-499ml: "Almost there" (Purple zone)
+  - 500ml+: "Goal Met"
+
+**Undo Logic Fix:**
+- The "Undo" button (in toast) is **only** shown for newly created feeds (`POST`).
+- It is hidden for edits (`PUT`) to avoid confusion/bugs where undo wouldn't revert edits.
+
 ---
 
 ## API Endpoints

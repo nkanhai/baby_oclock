@@ -10,6 +10,8 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 - **Voice input**: Hands-free logging using your phone's built-in speech recognition (hidden behind feature flag)
 - **Last feed status**: See at a glance how long it's been since the last feed
 - **Last diaper status**: See how long since the last diaper change
+- **Next Feed Timer**: Countdown to the next 3-hour mark (turns red when overdue)
+- **Daily Goal**: Visual progress bar tracking today's milk intake towards 500ml goal
 - **Today's log**: View all feeds for the day in reverse chronological order
 - **History**: View the last 7 days of feeds and diaper changes, grouped by Today, Yesterday, and date
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
