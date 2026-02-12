@@ -69,7 +69,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 1. **Bottle**: Tap 🍼 → Select amount (ml) → Done
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
-4. **Diaper**: Tap 🩱 → Select type (Pee/Poop/Both) → Done
+4. **Diaper**: Tap 🍑 → Select type (Pee/Poop/Both) → Done
 
 ### Voice Input Examples
 
