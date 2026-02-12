@@ -659,6 +659,40 @@
             transform: rotate(45deg);
         }
 
+        .feed-delete {
+            background: none;
+            border: none;
+            color: #5c6270;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            margin-left: 8px;
+            /* Increased margin for edit button spacing */
+            transition: color 0.2s;
+        }
+
+        .feed-delete:hover {
+            color: #E8877C;
+        }
+
+        .feed-edit {
+            background: none;
+            border: none;
+            color: #5c6270;
+            font-size: 16px;
+            /* Slightly smaller than delete */
+            cursor: pointer;
+            padding: 4px;
+            margin-left: auto;
+            /* Push to right, before delete */
+            transition: color 0.2s;
+        }
+
+        .feed-edit:hover {
+            color: #4A90D9;
+            /* Blue for edit */
+        }
+
         /* Special styling for Today/Yesterday headers (no toggle icon if we force open? or just keep consistent) */
         details.feed-group.highlight-group summary.group-header {
             color: #fff;
@@ -1024,6 +1058,23 @@
 
         function closeModal(modal) {
             modal.classList.remove('active');
+
+            // Reset edit state whenever a modal is closed
+            editingFeedId = null;
+
+            // Reset button text
+            const bottleBtn = document.getElementById('bottleSelect');
+            if (bottleBtn) bottleBtn.textContent = 'Select';
+
+            const pumpBtn = document.getElementById('pumpSelect');
+            if (pumpBtn) pumpBtn.textContent = 'Select';
+
+            // Hide/Reset Save buttons for Nurse/Diaper
+            const nurseSave = document.getElementById('nurseSave');
+            if (nurseSave) nurseSave.style.display = 'none';
+
+            const diaperSave = document.getElementById('diaperSave');
+            if (diaperSave) diaperSave.style.display = 'none';
         }
 
         document.getElementById('bottleSelect').addEventListener('click', () => {
@@ -1157,8 +1208,8 @@
             };
 
             try {
-                const response = await fetch('/api/feeds', {
-                    method: 'POST',
+                let url = '/api/feeds'; let method = 'POST'; if (editingFeedId !== null) { url = `/api/feeds/${editingFeedId}`; method = 'PUT'; } const response = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(feedData)
                 });
@@ -1166,7 +1217,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    lastCreatedFeedId = result.id;
+                    if (method === 'POST') lastCreatedFeedId = result.id;
 
                     // Close modal
                     closeModal(bottleModal);
@@ -1250,6 +1301,7 @@
                 // Fetch 7 days of history as per requirements
                 const response = await fetch('/api/feeds?limit_days=7');
                 const data = await response.json();
+                currentFeeds = data.feeds; // Store feeds globally
 
                 // Update last feed
                 const lastFeedContainer = document.getElementById('lastFeedContainer');
@@ -1424,6 +1476,7 @@
                         <div class="feed-time">${feed.time}</div>
                         <div class="feed-details">${buildFeedDetailsText(feed)}</div>
                     </div>
+                    <button class="feed-edit" onclick="editFeed(${feed.id})">✎</button>
                     <button class="feed-delete" onclick="deleteFeed(${feed.id})">×</button>
                 </div>
             `;
@@ -1436,6 +1489,131 @@
             if (feed.duration_min) details += ` • ${feed.duration_min} min`;
             if (feed.logged_by) details += ` • ${feed.logged_by}`;
             return details;
+        }
+
+        function editFeed(feedId) {
+            // Find feed in current data
+            const feed = currentFeeds.find(f => f.id === feedId);
+            if (!feed) return;
+
+            editingFeedId = feedId;
+            const originalType = feed.type.toLowerCase();
+
+            // Determine type and side/state
+            let type = originalType;
+            let side = null;
+
+            if (originalType.includes('bottle')) {
+                type = 'bottle';
+            } else if (originalType.includes('nurse')) {
+                type = 'nurse';
+                if (originalType.includes('left')) side = 'left';
+                else if (originalType.includes('right')) side = 'right';
+                else if (originalType.includes('both')) side = 'both';
+            } else if (originalType.includes('pump')) {
+                type = 'pump';
+                if (originalType.includes('left')) side = 'left';
+                else if (originalType.includes('right')) side = 'right';
+                else if (originalType.includes('both')) side = 'both';
+            } else if (originalType.includes('diaper')) {
+                type = 'diaper';
+                if (originalType.includes('pee')) side = 'pee';
+                else if (originalType.includes('poop')) side = 'poop';
+                else if (originalType.includes('both')) side = 'both';
+            }
+
+            // Open modal and pre-fill
+            if (type === 'bottle') {
+                openModal(bottleModal);
+                // Set amount
+                if (feed.amount_ml) {
+                    setTumblerValue('bottle', feed.amount_ml);
+                    document.getElementById('bottleCustomMl').value = feed.amount_ml;
+                }
+                // Set other fields
+                if (feed.duration_min) document.getElementById('bottleDuration').value = feed.duration_min;
+                if (feed.notes) document.getElementById('bottleNotes').value = feed.notes;
+
+                // Change button to "Save Changes"
+                const selectBtn = document.getElementById('bottleSelect');
+                selectBtn.textContent = 'Save Changes';
+            } else if (type === 'nurse') {
+                openModal(nurseModal);
+                // Set side selection
+                document.querySelectorAll('#nurseModal .side-btn').forEach(btn => {
+                    if (btn.dataset.side === side) btn.classList.add('selected');
+                    else btn.classList.remove('selected');
+                });
+                // Set other fields
+                if (feed.duration_min) document.getElementById('nurseDuration').value = feed.duration_min;
+                if (feed.notes) document.getElementById('nurseNotes').value = feed.notes;
+
+                // Add Save button if not exists (Nurse modal is usually instant)
+                let saveBtn = document.getElementById('nurseSave');
+                if (!saveBtn) {
+                    saveBtn = document.createElement('button');
+                    saveBtn.id = 'nurseSave';
+                    saveBtn.className = 'modal-btn';
+                    saveBtn.textContent = 'Save Changes';
+                    saveBtn.onclick = () => {
+                        const selectedSide = document.querySelector('#nurseModal .side-btn.selected');
+                        if (selectedSide) logFeed('nurse', selectedSide.dataset.side);
+                    };
+                    document.querySelector('#nurseModal .modal-actions').appendChild(saveBtn);
+                }
+                saveBtn.style.display = 'block';
+
+            } else if (type === 'pump') {
+                openModal(pumpModal);
+                // Set side
+                pumpSelectedSide = side;
+                document.querySelectorAll('#pumpModal .side-btn').forEach(btn => {
+                    if (btn.dataset.side === side) btn.classList.add('selected');
+                    else btn.classList.remove('selected');
+                });
+
+                // Show amount section immediately
+                document.getElementById('pumpInitialActions').style.display = 'none';
+                document.getElementById('pumpAmountSection').style.display = 'block';
+                initTumblers(); // Ensure tumblers exist
+
+                // Set amount
+                if (feed.amount_ml) {
+                    // Need a small timeout for tumblers to render if they were just created
+                    setTimeout(() => setTumblerValue('pump', feed.amount_ml), 10);
+                    document.getElementById('pumpCustomMl').value = feed.amount_ml;
+                }
+
+                if (feed.duration_min) document.getElementById('pumpDuration').value = feed.duration_min;
+                if (feed.notes) document.getElementById('pumpNotes').value = feed.notes;
+
+                const selectBtn = document.getElementById('pumpSelect');
+                selectBtn.textContent = 'Save Changes';
+
+            } else if (type === 'diaper') {
+                openModal(diaperModal);
+                // Set type selection
+                document.querySelectorAll('#diaperModal .side-btn').forEach(btn => {
+                    if (btn.dataset.type === side) btn.classList.add('selected');
+                    else btn.classList.remove('selected');
+                });
+                if (feed.notes) document.getElementById('diaperNotes').value = feed.notes;
+
+                // Add Save button if not exists
+                let saveBtn = document.getElementById('diaperSave');
+                if (!saveBtn) {
+                    saveBtn = document.createElement('button');
+                    saveBtn.id = 'diaperSave';
+                    saveBtn.className = 'modal-btn';
+                    saveBtn.textContent = 'Save Changes';
+                    saveBtn.onclick = () => {
+                        const selectedType = document.querySelector('#diaperModal .side-btn.selected');
+                        if (selectedType) logFeed('diaper', selectedType.dataset.type);
+                    };
+                    document.querySelector('#diaperModal .modal-actions').appendChild(saveBtn);
+                }
+                saveBtn.style.display = 'block';
+            }
         }
 
         function formatTimeAgo(minutes) {
