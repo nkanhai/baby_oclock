@@ -13,6 +13,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 - **History**: View the last 7 days of feeds and diaper changes, grouped by Today, Yesterday, and date
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
 - **Mobile-optimized**: Big touch targets, dark mode, works great on phones
+- **Edit & Delete**: Easily correct mistakes or update details for any past log
 - **Local network**: Access from any phone on your WiFi — no cloud, no accounts
 - **Large Clock**: See the current time prominently displayed for easy reference
 
@@ -70,6 +71,16 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
 4. **Diaper**: Tap 🍑 → Select type (Pee/Poop/Both) → Done
+
+### Editing Feeds
+
+Tap the **Edit** (✎) button next to any feed in the list to modify its details. You can update:
+- **Bottle**: Amount (ml), duration, notes
+- **Nurse**: Side, duration, notes
+- **Pump**: Side, amount, duration, notes
+- **Diaper**: Type, notes
+
+The original timestamp is preserved when editing.
 
 ### Voice Input Examples
 

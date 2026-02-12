@@ -60,8 +60,10 @@ Esme_oClock/
 ### Data Flow
 
 1. **User taps button** on phone → JavaScript in `index.html`
-2. **Frontend sends POST** to `/api/feeds` with JSON payload
-3. **Flask endpoint** receives request → calls `add_feed_to_excel()`
+2. **Frontend sends POST/PUT** to `/api/feeds` with JSON payload
+   - **POST**: New log
+   - **PUT**: Update existing log (preserves ID and timestamp)
+3. **Flask endpoint** receives request → calls `add_feed_to_excel()` or `update_feed_in_excel()`
 4. **Excel write** happens with thread lock (prevents corruption)
 5. **Response sent** back to frontend
 6. **Frontend updates UI** with new entry and stats
@@ -401,6 +403,19 @@ POST /api/feeds
 - `total_diaper_changes` - Count of diaper changes today
 - `last_diaper_minutes_ago` - Minutes since last diaper change
 - `last_diaper_summary` - Description of last diaper change
+
+### Edit Logs Logic
+**Added:** February 2026
+
+**Frontend:**
+- **Edit Mode**: `editFeed(id)` fetches the feed data (stored in `currentFeeds` global) and pre-fills the appropriate modal.
+- **State**: Sets `editingFeedId` variable.
+- **UI Changes**: "Select" buttons change to "Save Changes".
+- **Submission**: `logFeed()` checks `editingFeedId`. If set, sends `PUT` request instead of `POST`.
+- **Cleanup**: `closeModal()` explicitly resets `editingFeedId` and UI buttons to prevent state leakage (fixing the 404 bug).
+
+**Backend:**
+- **PUT /api/feeds/<id>**: Updates existing row in Excel. Preserves `timestamp` to maintain chronological order. Supports partial updates.
 
 ### Feature Flags
 
