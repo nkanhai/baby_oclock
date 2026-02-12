@@ -156,11 +156,19 @@ baby-tracker/
 ├── app.py                 # Flask server
 ├── templates/
 │   └── index.html         # Single-page UI
+├── static/
+│   └── manifest.json      # PWA manifest
 ├── feeds.xlsx             # Auto-created data file
 ├── tests/                 # 117+ automated tests
+├── docs/                  # Project Documentation
+│   ├── SETUP.md           # Setup intructions
+│   ├── maintenance/       # Migration, Maintenance, Troubleshooting
+│   ├── testing/           # Test Checklists & Summaries
+│   └── dev/               # Developer Context (CLAUDE.md)
 ├── requirements.txt       # Python dependencies
 ├── README.md              # This file
-└── start.sh               # One-command launcher
+├── start.sh               # One-command launcher
+└── setup_tunnel.sh        # Server configuration script
 ```
 
 ## What This App Doesn't Do
