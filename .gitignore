@@ -26,3 +26,5 @@ instance/
 # OS
 .DS_Store
 Thumbs.db
+server_maintenance.md
+docs/maintenance/
