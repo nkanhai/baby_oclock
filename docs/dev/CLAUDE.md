@@ -273,6 +273,26 @@ This bug was fixed in commit that reordered keyword checks.
 
 ---
 
+### 8. Tumbler vs Input Conflict Resolution
+(Implemented Feb 2026)
+
+**Problem:** Users can select amount via Tumbler wheel OR type in "Custom Amount" input. If they do both, which one wins?
+**Solution:** "Last Interaction Wins" logic.
+- If user scrolls/clicks Tumbler → Custom Input is cleared.
+- If user types in Custom Input → It overrides the Tumbler (standard behavior).
+- **Implementation:** `createTumbler()` attaches scroll/click listeners that clear the linked input field.
+
+### 9. Manual Time Entry Logic
+(Implemented Feb 2026)
+
+**Feature:** Users can edit the time of a feed in the "More options" section.
+**New Log:** Defaults to current time ("now").
+**Editing Log:** Pre-fills with the *original* time of the log.
+**Gotcha (Fixed Bug):** Previously, opening the edit modal would reset the time to "now" because `openModal` didn't distinguish between new and edit modes.
+**Fix:** `openModal` now checks `if (editingFeedId === null)` before setting the time to "now".
+
+---
+
 ## API Endpoints
 
 ### GET /

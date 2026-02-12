@@ -5,6 +5,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 ## Features
 
 - **Quick logging**: Log a bottle feed in seconds with the intuitive Tumbler UI (0-99 ml)
+- **Manual Time Entry**: Edit timestamps for any log if you forgot to track it immediately
 - **Diaper tracking**: Log pee, poop, or both with 2 taps — see "last diaper change" timer on home screen
 - **Voice input**: Hands-free logging using your phone's built-in speech recognition (hidden behind feature flag)
 - **Last feed status**: See at a glance how long it's been since the last feed
@@ -127,9 +128,11 @@ ipconfig
 
 2. **Use the "Who" toggle**: Switch between Mom/Dad at the top so you don't have to select it each time.
 
-3. **Quick bottle logging**: The tumbler interface makes selecting amounts (e.g. 90-120 ml) very fast.
+3. **Quick bottle logging**: The tumbler interface makes selecting amounts (e.g. 90-120 ml) very fast. Note: If you scroll the wheel, it automatically clears any manual custom amount you typed.
 
-4. **Quick diaper logging**: Tap Diaper → tap Pee/Poop/Both — done in 2 taps.
+4. **Correcting timestamps**: If you log a feed late, just tap "Edit" on the log entry and change the time. It preserves the original date.
+
+5. **Quick diaper logging**: Tap Diaper → tap Pee/Poop/Both — done in 2 taps.
 
 5. **Leave it running**: The server can run 24/7 on a laptop. Both parents can log from their phones anytime.
 

@@ -791,6 +791,10 @@
                         <label>Notes</label>
                         <input type="text" class="custom-input" id="bottleNotes" placeholder="Optional">
                     </div>
+                    <div class="custom-input-group">
+                        <label>Time</label>
+                        <input type="time" class="custom-input" id="bottleTime">
+                    </div>
                 </div>
             </div>
             <div class="modal-actions">
@@ -818,6 +822,10 @@
                     <div class="custom-input-group">
                         <label>Notes</label>
                         <input type="text" class="custom-input" id="nurseNotes" placeholder="Optional">
+                    </div>
+                    <div class="custom-input-group">
+                        <label>Time</label>
+                        <input type="time" class="custom-input" id="nurseTime">
                     </div>
                 </div>
             </div>
@@ -861,6 +869,10 @@
                             <label>Notes</label>
                             <input type="text" class="custom-input" id="pumpNotes" placeholder="Optional">
                         </div>
+                        <div class="custom-input-group">
+                            <label>Time</label>
+                            <input type="time" class="custom-input" id="pumpTime">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -891,6 +903,10 @@
                         <label>Notes</label>
                         <input type="text" class="custom-input" id="diaperNotes"
                             placeholder="Optional notes (e.g., blowout, rash)">
+                    </div>
+                    <div class="custom-input-group">
+                        <label>Time</label>
+                        <input type="time" class="custom-input" id="diaperTime">
                     </div>
                 </div>
             </div>
@@ -942,6 +958,7 @@
         let editingFeedId = null;
         let pumpSelectedSide = null;
         let voiceParsedData = null;
+        let editingFeedDate = null; // Store the original date when editing
 
         // Speech recognition
         let recognition = null;
@@ -1031,15 +1048,26 @@
 
         function openModal(modal) {
             modal.classList.add('active');
+
+            // Set default time to now for new entries ONLY
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' +
+                now.getMinutes().toString().padStart(2, '0');
+
+            // Only update time inputs if we are NOT editing
+            const shouldUpdateTime = (editingFeedId === null);
+
             // Reset forms
             if (modal === bottleModal) {
                 document.getElementById('bottleCustomMl').value = '';
                 document.getElementById('bottleDuration').value = '';
                 document.getElementById('bottleNotes').value = '';
+                if (shouldUpdateTime) document.getElementById('bottleTime').value = timeStr;
                 initTumblers();
             } else if (modal === nurseModal) {
                 document.getElementById('nurseDuration').value = '';
                 document.getElementById('nurseNotes').value = '';
+                if (shouldUpdateTime) document.getElementById('nurseTime').value = timeStr;
             } else if (modal === pumpModal) {
                 pumpSelectedSide = null;
                 document.getElementById('pumpAmountSection').style.display = 'none';
@@ -1047,6 +1075,7 @@
                 document.getElementById('pumpCustomMl').value = '';
                 document.getElementById('pumpDuration').value = '';
                 document.getElementById('pumpNotes').value = '';
+                if (shouldUpdateTime) document.getElementById('pumpTime').value = timeStr;
             } else if (modal === voiceModal) {
                 document.getElementById('voiceTranscript').textContent = '';
                 document.getElementById('voiceParsedSection').style.display = 'none';
@@ -1054,6 +1083,7 @@
                 document.getElementById('voiceListening').style.display = 'block';
             } else if (modal === diaperModal) {
                 document.getElementById('diaperNotes').value = '';
+                if (shouldUpdateTime) document.getElementById('diaperTime').value = timeStr;
             }
         }
 
@@ -1062,6 +1092,7 @@
 
             // Reset edit state whenever a modal is closed
             editingFeedId = null;
+            editingFeedDate = null;
 
             // Reset button text
             const bottleBtn = document.getElementById('bottleSelect');
@@ -1088,7 +1119,14 @@
         document.querySelectorAll('#nurseModal .side-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const side = btn.dataset.side;
-                logFeed('nurse', side);
+                // Only log immediately if not editing, otherwise wait for Save
+                if (editingFeedId === null) {
+                    logFeed('nurse', side);
+                } else {
+                    // Just visually select it
+                    document.querySelectorAll('#nurseModal .side-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                }
             });
         });
 
@@ -1118,21 +1156,27 @@
         document.querySelectorAll('#diaperModal .side-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const type = btn.dataset.type;
-                logFeed('diaper', type);
+                if (editingFeedId === null) {
+                    logFeed('diaper', type);
+                } else {
+                    document.querySelectorAll('#diaperModal .side-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                }
             });
         });
 
         // Tumbler Logic
         function initTumblers() {
+            // Check if already initialized to avoid duplicate listeners
             if (document.getElementById('bottleTens').children.length === 0) {
-                createTumbler('bottleTens');
-                createTumbler('bottleOnes');
-                createTumbler('pumpTens');
-                createTumbler('pumpOnes');
+                createTumbler('bottleTens', 'bottleCustomMl');
+                createTumbler('bottleOnes', 'bottleCustomMl');
+                createTumbler('pumpTens', 'pumpCustomMl');
+                createTumbler('pumpOnes', 'pumpCustomMl');
             }
         }
 
-        function createTumbler(elementId) {
+        function createTumbler(elementId, clearInputId = null) {
             const container = document.getElementById(elementId);
             container.innerHTML = ''; // Clear existing
 
@@ -1142,6 +1186,14 @@
                 item.textContent = i;
                 container.appendChild(item);
             }
+
+            // Resolve input element once if ID provided
+            const inputToClear = clearInputId ? document.getElementById(clearInputId) : null;
+            const clearInput = () => {
+                if (inputToClear && inputToClear.value !== '') {
+                    inputToClear.value = '';
+                }
+            };
 
             // Scroll listener purely for haptic feedback potential or active class updates (optional)
             // For now, relies on CSS scroll-snap
@@ -1155,7 +1207,14 @@
                     if (i === index) item.classList.add('active');
                     else item.classList.remove('active');
                 });
+
+                // Clear input on scroll
+                clearInput();
             });
+
+            // Also clear on direct interaction
+            container.addEventListener('click', clearInput);
+            container.addEventListener('touchstart', clearInput, { passive: true });
 
             // Trigger initial active state
             const items = container.querySelectorAll('.tumbler-item');
@@ -1173,10 +1232,44 @@
             return (Math.min(9, Math.max(0, tens)) * 10) + Math.min(9, Math.max(0, ones));
         }
 
+        // Helper to get time string from ISO string
+        function getTimeFromIso(isoString) {
+            const date = new Date(isoString);
+            return date.getHours().toString().padStart(2, '0') + ':' +
+                date.getMinutes().toString().padStart(2, '0');
+        }
+
+        // Helper to construct ISO string from date and time input
+        function constructTimestamp(dateStr, timeInputStr) {
+            if (!timeInputStr) return new Date().toISOString();
+
+            // dateStr should be YYYY-MM-DD
+            // timeInputStr should be HH:MM
+
+            const [hours, minutes] = timeInputStr.split(':').map(Number);
+
+            let date;
+            if (dateStr) {
+                // Parse date parts to avoid timezone issues
+                const [year, month, day] = dateStr.split('-').map(Number);
+                date = new Date(year, month - 1, day);
+            } else {
+                date = new Date();
+            }
+
+            date.setHours(hours);
+            date.setMinutes(minutes);
+            date.setSeconds(0);
+            date.setMilliseconds(0);
+
+            return date.toISOString();
+        }
+
         // Log feed
         async function logFeed(type, side = null, amountMl = null) {
             let duration = null;
             let notes = '';
+            let timeStr = '';
 
             // Get optional fields based on type
             if (type === 'bottle') {
@@ -1185,18 +1278,28 @@
                 }
                 duration = parseInt(document.getElementById('bottleDuration').value) || null;
                 notes = document.getElementById('bottleNotes').value || '';
+                timeStr = document.getElementById('bottleTime').value;
             } else if (type === 'nurse') {
                 duration = parseInt(document.getElementById('nurseDuration').value) || null;
                 notes = document.getElementById('nurseNotes').value || '';
+                timeStr = document.getElementById('nurseTime').value;
             } else if (type === 'pump') {
                 if (!amountMl) {
                     amountMl = parseFloat(document.getElementById('pumpCustomMl').value) || null;
                 }
                 duration = parseInt(document.getElementById('pumpDuration').value) || null;
                 notes = document.getElementById('pumpNotes').value || '';
+                timeStr = document.getElementById('pumpTime').value;
             } else if (type === 'diaper') {
                 notes = document.getElementById('diaperNotes').value || '';
+                timeStr = document.getElementById('diaperTime').value;
             }
+
+            // Construct timestamp
+            // If editing, use the original date + new time
+            // If new, use current date + new time
+            const dateBase = editingFeedId !== null ? editingFeedDate : new Date().toLocaleDateString('en-CA');
+            const timestamp = constructTimestamp(dateBase, timeStr);
 
             const feedData = {
                 type: type,
@@ -1205,11 +1308,18 @@
                 duration_min: duration,
                 notes: notes,
                 logged_by: currentWho,
-                timestamp: new Date().toISOString()
+                timestamp: timestamp
             };
 
             try {
-                let url = '/api/feeds'; let method = 'POST'; if (editingFeedId !== null) { url = `/api/feeds/${editingFeedId}`; method = 'PUT'; } const response = await fetch(url, {
+                let url = '/api/feeds';
+                let method = 'POST';
+                if (editingFeedId !== null) {
+                    url = `/api/feeds/${editingFeedId}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(feedData)
@@ -1423,7 +1533,7 @@
                     let todayMl = 0;
                     todayGroup.forEach(f => { if (f.amount_ml) todayMl += f.amount_ml; });
 
-                    const statsText = document.getElementById('statsText');
+                    // const statsText = document.getElementById('statsText');
                     statsText.textContent = `${todayGroup.length} feeds • ${Math.round(todayMl)} ml (Today)`;
                 }
             } catch (error) {
@@ -1500,6 +1610,19 @@
             editingFeedId = feedId;
             const originalType = feed.type.toLowerCase();
 
+            // Store original date for timestamp reconstruction
+            if (feed.timestamp) {
+                // feed.timestamp is ISO string
+                // Extract YYYY-MM-DD
+                editingFeedDate = feed.timestamp.split('T')[0];
+            } else {
+                // Fallback to today if missing (shouldn't happen)
+                editingFeedDate = new Date().toLocaleDateString('en-CA');
+            }
+
+            // Get time string HH:MM
+            const timeStr = feed.timestamp ? getTimeFromIso(feed.timestamp) : '';
+
             // Determine type and side/state
             let type = originalType;
             let side = null;
@@ -1528,12 +1651,13 @@
                 openModal(bottleModal);
                 // Set amount
                 if (feed.amount_ml) {
-                    setTumblerValue('bottle', feed.amount_ml);
+                    setTimeout(() => setTumblerValue('bottle', feed.amount_ml), 10);
                     document.getElementById('bottleCustomMl').value = feed.amount_ml;
                 }
                 // Set other fields
                 if (feed.duration_min) document.getElementById('bottleDuration').value = feed.duration_min;
                 if (feed.notes) document.getElementById('bottleNotes').value = feed.notes;
+                if (timeStr) document.getElementById('bottleTime').value = timeStr;
 
                 // Change button to "Save Changes"
                 const selectBtn = document.getElementById('bottleSelect');
@@ -1548,6 +1672,7 @@
                 // Set other fields
                 if (feed.duration_min) document.getElementById('nurseDuration').value = feed.duration_min;
                 if (feed.notes) document.getElementById('nurseNotes').value = feed.notes;
+                if (timeStr) document.getElementById('nurseTime').value = timeStr;
 
                 // Add Save button if not exists (Nurse modal is usually instant)
                 let saveBtn = document.getElementById('nurseSave');
@@ -1587,6 +1712,7 @@
 
                 if (feed.duration_min) document.getElementById('pumpDuration').value = feed.duration_min;
                 if (feed.notes) document.getElementById('pumpNotes').value = feed.notes;
+                if (timeStr) document.getElementById('pumpTime').value = timeStr;
 
                 const selectBtn = document.getElementById('pumpSelect');
                 selectBtn.textContent = 'Save Changes';
@@ -1598,9 +1724,11 @@
                     if (btn.dataset.type === side) btn.classList.add('selected');
                     else btn.classList.remove('selected');
                 });
-                if (feed.notes) document.getElementById('diaperNotes').value = feed.notes;
 
-                // Add Save button if not exists
+                if (feed.notes) document.getElementById('diaperNotes').value = feed.notes;
+                if (timeStr) document.getElementById('diaperTime').value = timeStr;
+
+                // Add Save button
                 let saveBtn = document.getElementById('diaperSave');
                 if (!saveBtn) {
                     saveBtn = document.createElement('button');
