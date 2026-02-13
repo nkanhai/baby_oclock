@@ -693,17 +693,193 @@
             /* Blue for edit */
         }
 
-        /* Special styling for Today/Yesterday headers (no toggle icon if we force open? or just keep consistent) */
-        details.feed-group.highlight-group summary.group-header {
-            color: #fff;
-            font-size: 22px;
-            border-bottom: 1px solid #3d4556;
-            margin-bottom: 16px;
-        }
-
         details.feed-group.highlight-group summary.group-header::after {
             display: none;
             /* Always open, no toggle needed */
+        }
+
+        /* Next Feed Timer */
+        .next-feed-timer {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #404554;
+        }
+
+        .next-feed-label {
+            font-size: 14px;
+            color: #a8adb8;
+            margin-bottom: 4px;
+        }
+
+        .next-feed-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #4A90D9;
+        }
+
+        .next-feed-value.overdue {
+            color: #E8877C;
+        }
+
+        /* Daily Goal Progress */
+        .daily-goal-container {
+            background: #252b3b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .daily-goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .daily-goal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8eaed;
+        }
+
+        .daily-goal-value {
+            font-size: 16px;
+            color: #a8adb8;
+        }
+
+        .progress-bar-bg {
+            background: #1a1f2e;
+            height: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 8px;
+            /* Smooth gradient from Blue to Purple */
+            background: linear-gradient(90deg, #4A90D9 0%, #6c8de3 60%, #9C87E8 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-bar-fill.great {
+            box-shadow: 0 0 12px rgba(156, 135, 232, 0.6);
+            /* Glow when doing great */
+        }
+
+        .daily-goal-status {
+            font-size: 13px;
+            color: #a8adb8;
+            text-align: right;
+        }
+
+        /* Vitamin D Reminder */
+        .vitamin-reminder {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #2d2a1f 0%, #2d3548 100%);
+            border-left: 4px solid #F5A623;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vitamin-reminder::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(245, 166, 35, 0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .vitamin-reminder:active {
+            transform: scale(0.98);
+        }
+
+        .vitamin-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .vitamin-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #e8eaed;
+            flex: 1;
+            z-index: 1;
+        }
+
+        .vitamin-check {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4CD964;
+            opacity: 0;
+            transform: scale(0);
+            transition: none;
+            z-index: 1;
+        }
+
+        .vitamin-reminder.confirming .vitamin-check {
+            animation: vitaminConfirm 0.4s ease forwards;
+        }
+
+        .vitamin-reminder.confirming .vitamin-text {
+            color: #4CD964;
+        }
+
+        .vitamin-reminder.confirming {
+            border-left-color: #4CD964;
+            background: linear-gradient(135deg, #1f2d1f 0%, #2d3548 100%);
+        }
+
+        .vitamin-reminder.sliding-out {
+            animation: vitaminSlideOut 0.5s ease forwards;
+        }
+
+        @keyframes vitaminConfirm {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.3);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes vitaminSlideOut {
+            0% {
+                opacity: 1;
+                max-height: 60px;
+                margin-bottom: 16px;
+                padding: 14px 18px;
+            }
+
+            100% {
+                opacity: 0;
+                max-height: 0;
+                margin-bottom: 0;
+                padding: 0 18px;
+                transform: translateY(-10px);
+            }
         }
     </style>
 </head>
@@ -721,9 +897,28 @@
         <button class="who-btn" data-who="Dad">Dad</button>
     </div>
 
+    <!-- Vitamin D Reminder -->
+    <div class="vitamin-reminder" id="vitaminReminder" style="display: none;" onclick="logVitamin()">
+        <span class="vitamin-icon">☀️</span>
+        <span class="vitamin-text">Tap to give Vitamin D drops</span>
+        <span class="vitamin-check" id="vitaminCheck">✓</span>
+    </div>
+
     <!-- Last feed status -->
     <div class="last-feed-container" id="lastFeedContainer">
         <div class="last-feed-none">Loading...</div>
+    </div>
+
+    <!-- Daily Goal Progress -->
+    <div class="daily-goal-container" id="dailyGoalContainer" style="display: none;">
+        <div class="daily-goal-header">
+            <span class="daily-goal-title">Today's Total</span>
+            <span class="daily-goal-value" id="dailyGoalValue">-- / 500 ml</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="dailyGoalBar" style="width: 0%"></div>
+        </div>
+        <div class="daily-goal-status" id="dailyGoalStatus">Loading...</div>
     </div>
 
     <!-- Action buttons -->
@@ -1232,6 +1427,16 @@
             return (Math.min(9, Math.max(0, tens)) * 10) + Math.min(9, Math.max(0, ones));
         }
 
+        // Helper to get HH:MM AM/PM from Date object
+        function formatTime(date) {
+            let hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
         // Helper to get time string from ISO string
         function getTimeFromIso(isoString) {
             const date = new Date(isoString);
@@ -1338,7 +1543,8 @@
                     closeModal(voiceModal);
 
                     // Show toast
-                    showToast(buildFeedSummary(type, side, amountMl, duration), true);
+                    // Only show undo for NEW feeds (POST), not edits (PUT)
+                    showToast(buildFeedSummary(type, side, amountMl, duration), method === 'POST');
 
                     // Refresh feeds
                     loadFeeds();
@@ -1445,6 +1651,103 @@
                     `;
                 }
 
+                // --- Next Feed Timer Logic ---
+                // Find most recent FEED (not diaper, not vitamin) to calc next feed time
+                let lastFeedObj = null;
+                for (const feed of data.feeds) {
+                    if (!feed.type.toLowerCase().includes('diaper') && !feed.type.includes('Vitamin D')) {
+                        lastFeedObj = feed;
+                        break;
+                    }
+                }
+
+                if (lastFeedObj) {
+                    const lastFeedTime = new Date(lastFeedObj.timestamp);
+                    const nextFeedTime = new Date(lastFeedTime.getTime() + 3 * 60 * 60 * 1000); // +3 hours
+                    const now = new Date();
+                    const diffMs = nextFeedTime - now;
+                    const diffMins = Math.floor(diffMs / 60000);
+
+                    let label = "Next feed in";
+                    let valueClass = "next-feed-value";
+                    let timeText = "";
+
+                    if (diffMins < 0) {
+                        label = "Next feed overdue by";
+                        valueClass += " overdue";
+                        timeText = formatTimeAgo(Math.abs(diffMins));
+                    } else {
+                        const h = Math.floor(diffMins / 60);
+                        const m = diffMins % 60;
+                        if (h > 0) timeText = `${h}h ${m}m`;
+                        else timeText = `${m}m`;
+                    }
+
+                    // Append to container
+                    lastFeedContainer.innerHTML += `
+                        <div class="next-feed-timer">
+                            <div class="next-feed-label">${label}</div>
+                            <div class="${valueClass}">${timeText}</div>
+                            <div style="font-size: 13px; color: #8a8f9e; margin-top: 2px;">
+                                Target: ${formatTime(nextFeedTime)}
+                            </div>
+                        </div>
+                    `;
+                }
+
+
+                // --- Daily Goal Logic ---
+                // Filter feeds for TODAY (Local client time)
+                const nowLocal = new Date();
+                const year = nowLocal.getFullYear();
+                const month = String(nowLocal.getMonth() + 1).padStart(2, '0');
+                const day = String(nowLocal.getDate()).padStart(2, '0');
+                const todayKey = `${year}-${month}-${day}`;
+
+                // Calculate today's total ml
+                let todayMl = 0;
+                // create map if not exists
+                const groupsForGoal = groupFeedsByDate(data.feeds);
+                const todayFeeds = groupsForGoal[todayKey] || [];
+                todayFeeds.forEach(f => {
+                    if (f.amount_ml && !f.type.toLowerCase().includes('pump') && !f.type.includes('Vitamin D')) {
+                        todayMl += f.amount_ml;
+                    }
+                });
+
+                // Update UI
+                const goalContainer = document.getElementById('dailyGoalContainer');
+                const goalValue = document.getElementById('dailyGoalValue');
+                const goalBar = document.getElementById('dailyGoalBar');
+                const goalStatus = document.getElementById('dailyGoalStatus');
+
+                goalContainer.style.display = 'block';
+                goalValue.textContent = `${Math.round(todayMl)} / 500 ml`;
+
+                // Calculate percentage (max 100 for width)
+                const percentage = Math.min(100, Math.max(5, (todayMl / 500) * 100)); // Min 5% so bar is visible
+                goalBar.style.width = `${percentage}%`;
+
+                // Classes
+                // Classes
+                goalBar.className = 'progress-bar-fill'; // Reset
+                let statusText = "";
+
+                if (todayMl >= 500) {
+                    goalBar.classList.add('great');
+                    statusText = "🎉 Goal Met!";
+                } else if (todayMl >= 450) {
+                    goalBar.classList.add('great'); // Purple glow range
+                    statusText = "💜 Almost there!";
+                } else if (todayMl >= 400) {
+                    statusText = "✅ Minimum met";
+                } else if (todayMl >= 200) {
+                    statusText = "On track";
+                } else {
+                    statusText = "Keep going";
+                }
+                goalStatus.textContent = statusText;
+
                 // Update stats
                 const statsText = document.getElementById('statsText');
                 statsText.textContent = `${data.total_feeds_today} feeds • ${data.total_ml_today} ml`;
@@ -1531,11 +1834,18 @@
 
                     const todayGroup = groups[todayKey] || [];
                     let todayMl = 0;
-                    todayGroup.forEach(f => { if (f.amount_ml) todayMl += f.amount_ml; });
+                    todayGroup.forEach(f => {
+                        if (f.amount_ml && !f.type.toLowerCase().includes('pump') && !f.type.includes('Vitamin D')) {
+                            todayMl += f.amount_ml;
+                        }
+                    });
 
                     // const statsText = document.getElementById('statsText');
                     statsText.textContent = `${todayGroup.length} feeds • ${Math.round(todayMl)} ml (Today)`;
                 }
+
+                // Refresh vitamin status after loading feeds
+                checkVitaminStatus();
             } catch (error) {
                 console.error('Error loading feeds:', error);
             }
@@ -1581,13 +1891,16 @@
         }
 
         function renderFeedItem(feed) {
+            const isVitamin = feed.type.includes('Vitamin D');
+            const editBtn = isVitamin ? '' : `<button class="feed-edit" onclick="editFeed(${feed.id})">✎</button>`;
+
             return `
                 <div class="feed-item">
                     <div class="feed-info">
                         <div class="feed-time">${feed.time}</div>
                         <div class="feed-details">${buildFeedDetailsText(feed)}</div>
                     </div>
-                    <button class="feed-edit" onclick="editFeed(${feed.id})">✎</button>
+                    ${editBtn}
                     <button class="feed-delete" onclick="deleteFeed(${feed.id})">×</button>
                 </div>
             `;
@@ -1595,6 +1908,13 @@
 
 
         function buildFeedDetailsText(feed) {
+            // Special display for Vitamin D entries
+            if (feed.type.includes('Vitamin D')) {
+                const administered = feed.notes === 'No' ? ' — Missed' : '';
+                const who = feed.notes === 'No' ? 'Auto-logged' : (feed.logged_by || '');
+                return `☀️ Vitamin D${administered}${who ? ' • ' + who : ''}`;
+            }
+
             let details = feed.type;
             if (feed.amount_ml) details += ` • ${feed.amount_ml} ml`;
             if (feed.duration_min) details += ` • ${feed.duration_min} min`;
@@ -1755,7 +2075,7 @@
         }
 
         async function deleteFeed(feedId) {
-            if (!confirm('Delete this feed entry?')) return;
+            if (!confirm('Delete this entry?')) return;
 
             try {
                 const response = await fetch(`/api/feeds/${feedId}`, {
@@ -1765,7 +2085,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    loadFeeds();
+                    loadFeeds(); // This also calls checkVitaminStatus()
                 }
             } catch (error) {
                 console.error('Error deleting feed:', error);
@@ -1898,6 +2218,79 @@
         }
         setInterval(updateClock, 1000);
         updateClock(); // Initial call
+
+        // Vitamin D status check and logging
+        let vitaminLogging = false; // Prevent double-tap
+
+        async function checkVitaminStatus() {
+            try {
+                const response = await fetch('/api/vitamin-status');
+                const data = await response.json();
+                const reminder = document.getElementById('vitaminReminder');
+
+                if (data.given_today) {
+                    // Already given — hide banner
+                    reminder.style.display = 'none';
+                    reminder.classList.remove('confirming', 'sliding-out');
+                } else {
+                    // Not given — show banner
+                    reminder.style.display = 'flex';
+                    reminder.classList.remove('confirming', 'sliding-out');
+                    document.getElementById('vitaminCheck').style.opacity = '0';
+                }
+            } catch (error) {
+                console.error('Error checking vitamin status:', error);
+            }
+        }
+
+        async function logVitamin() {
+            if (vitaminLogging) return; // Prevent double-tap
+            vitaminLogging = true;
+
+            const reminder = document.getElementById('vitaminReminder');
+
+            try {
+                const response = await fetch('/api/vitamin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ logged_by: currentWho })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    lastCreatedFeedId = result.id;
+
+                    // Phase 1: Confirmation animation
+                    reminder.querySelector('.vitamin-text').textContent = 'Vitamin D given ✓';
+                    reminder.classList.add('confirming');
+
+                    // Phase 2: Slide out after 1.5s
+                    setTimeout(() => {
+                        reminder.classList.add('sliding-out');
+
+                        // Phase 3: Hide after slide animation completes
+                        setTimeout(() => {
+                            reminder.style.display = 'none';
+                            reminder.classList.remove('confirming', 'sliding-out');
+                            reminder.querySelector('.vitamin-text').textContent = 'Tap to give Vitamin D drops';
+                            vitaminLogging = false;
+                        }, 500);
+                    }, 1500);
+
+                    // Show toast with undo
+                    showToast('☀️ Vitamin D given', true);
+
+                    // Refresh feeds
+                    loadFeeds();
+                } else {
+                    vitaminLogging = false;
+                }
+            } catch (error) {
+                console.error('Error logging vitamin:', error);
+                vitaminLogging = false;
+            }
+        }
 
         // Initial load
         loadFeeds();

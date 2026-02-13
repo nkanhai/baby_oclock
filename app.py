@@ -105,6 +105,8 @@ def format_feed_type(feed_type, side=None):
             return "Diaper (Both)"
         else:
             return "Diaper"
+    elif feed_type == "vitamin_d":
+        return "Vitamin D"
     return feed_type
 
 
@@ -296,32 +298,38 @@ def get_feeds():
     # Sort by timestamp descending (most recent first)
     feeds.sort(key=lambda x: x["timestamp"], reverse=True)
 
-    # Calculate stats
+    # Calculate stats (exclude Vitamin D from feed/diaper stats)
     last_feed_minutes_ago = None
     last_feed_summary = None
     last_diaper_minutes_ago = None
     last_diaper_summary = None
     total_ml_today = 0
-    total_feeds_today = len(feeds)
+    total_feeds_today = 0
 
     if feeds:
-        # Most recent feed
-        last_feed = feeds[0]
-        last_timestamp = parse_iso_timestamp(last_feed["timestamp"])
-        # Remove timezone info if present to avoid comparison errors
-        if last_timestamp.tzinfo is not None:
-            last_timestamp = last_timestamp.replace(tzinfo=None)
-        last_feed_minutes_ago = int((datetime.now() - last_timestamp).total_seconds() / 60)
+        # Find most recent actual feed (not Vitamin D)
+        last_feed = None
+        for feed in feeds:
+            if "Vitamin D" not in feed["type"]:
+                last_feed = feed
+                break
 
-        # Build summary
-        amount_str = f"{last_feed['amount_ml']} ml" if last_feed["amount_ml"] else ""
-        duration_str = f"{last_feed['duration_min']} min" if last_feed["duration_min"] else ""
-        detail_str = " — ".join(filter(None, [amount_str, duration_str]))
+        if last_feed:
+            last_timestamp = parse_iso_timestamp(last_feed["timestamp"])
+            # Remove timezone info if present to avoid comparison errors
+            if last_timestamp.tzinfo is not None:
+                last_timestamp = last_timestamp.replace(tzinfo=None)
+            last_feed_minutes_ago = int((datetime.now() - last_timestamp).total_seconds() / 60)
 
-        last_feed_summary = f"{last_feed['type']}"
-        if detail_str:
-            last_feed_summary += f" — {detail_str}"
-        last_feed_summary += f" at {last_feed['time']}"
+            # Build summary
+            amount_str = f"{last_feed['amount_ml']} ml" if last_feed["amount_ml"] else ""
+            duration_str = f"{last_feed['duration_min']} min" if last_feed["duration_min"] else ""
+            detail_str = " — ".join(filter(None, [amount_str, duration_str]))
+
+            last_feed_summary = f"{last_feed['type']}"
+            if detail_str:
+                last_feed_summary += f" — {detail_str}"
+            last_feed_summary += f" at {last_feed['time']}"
 
         # Calculate last diaper change
         for feed in feeds:
@@ -333,8 +341,11 @@ def get_feeds():
                 last_diaper_summary = f"{feed['type']} at {feed['time']}"
                 break
 
-        # Calculate total ml
+        # Calculate total ml and feed count (exclude Vitamin D)
         for feed in feeds:
+            if "Vitamin D" in feed["type"]:
+                continue
+            total_feeds_today += 1
             if feed["amount_ml"]:
                 total_ml_today += feed["amount_ml"]
 
@@ -393,6 +404,81 @@ def update_feed(feed_id):
         return jsonify({"success": False, "error": "Feed not found"}), 404
 
 
+@app.route("/api/vitamin-status", methods=["GET"])
+def get_vitamin_status():
+    """Check if Vitamin D has been given today. Also lazily auto-logs missed doses."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_feeds = get_feeds_from_excel(today)
+
+    # Check today's vitamin status
+    vitamin_feed = None
+    for feed in today_feeds:
+        if "Vitamin D" in feed["type"]:
+            vitamin_feed = feed
+            break
+
+    # Lazy missed-dose check: did yesterday have a vitamin entry?
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday_feeds = get_feeds_from_excel(yesterday)
+    has_yesterday_vitamin = any("Vitamin D" in f["type"] for f in yesterday_feeds)
+
+    if not has_yesterday_vitamin and yesterday_feeds:
+        # Yesterday had feeds but no vitamin — auto-log missed dose
+        yesterday_end = datetime.strptime(yesterday + " 23:59:00", "%Y-%m-%d %H:%M:%S")
+        missed_data = {
+            "type": "vitamin_d",
+            "side": None,
+            "amount_ml": None,
+            "duration_min": None,
+            "notes": "No",
+            "logged_by": "Auto",
+            "timestamp": yesterday_end.isoformat()
+        }
+        add_feed_to_excel(missed_data)
+
+    if vitamin_feed:
+        return jsonify({
+            "given_today": True,
+            "vitamin_feed_id": vitamin_feed["id"],
+            "time_given": vitamin_feed["time"]
+        })
+    else:
+        return jsonify({
+            "given_today": False,
+            "vitamin_feed_id": None,
+            "time_given": None
+        })
+
+
+@app.route("/api/vitamin", methods=["POST"])
+def log_vitamin():
+    """Log Vitamin D administration."""
+    data = request.json or {}
+
+    feed_data = {
+        "type": "vitamin_d",
+        "side": None,
+        "amount_ml": None,
+        "duration_min": None,
+        "notes": "Yes",
+        "logged_by": data.get("logged_by", ""),
+        "timestamp": datetime.now().isoformat()
+    }
+
+    try:
+        feed_id = add_feed_to_excel(feed_data)
+        return jsonify({
+            "success": True,
+            "id": feed_id,
+            "message": "Vitamin D logged"
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
     """Get summary statistics."""
@@ -400,7 +486,7 @@ def get_stats():
     feeds = get_feeds_from_excel(today)
 
     total_ml = 0
-    total_feeds = len(feeds)
+    total_feeds = 0
     nursing_sessions = 0
     pump_ml = 0
     diaper_changes = 0
@@ -408,6 +494,12 @@ def get_stats():
     timestamps = []
 
     for feed in feeds:
+        # Skip Vitamin D entries from feed stats
+        if "Vitamin D" in feed["type"]:
+            continue
+
+        total_feeds += 1
+
         if feed["amount_ml"]:
             total_ml += feed["amount_ml"]
 
