@@ -10,6 +10,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 - **Voice input**: Hands-free logging using your phone's built-in speech recognition (hidden behind feature flag)
 - **Last feed status**: See at a glance how long it's been since the last feed
 - **Last diaper status**: See how long since the last diaper change
+- **Vitamin D Reminder**: Daily banner that reminds you to give drops (resets at midnight)
 - **Next Feed Timer**: Countdown to the next 3-hour mark (turns red when overdue)
 - **Daily Goal**: Visual progress bar tracking today's milk intake towards 500ml goal
 - **Today's log**: View all feeds for the day in reverse chronological order
@@ -73,6 +74,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
 4. **Diaper**: Tap 🍑 → Select type (Pee/Poop/Both) → Done
+5. **Vitamin D**: Tap the yellow banner ☀️ at the top of the screen → Done
 
 ### Voice Input Examples
 

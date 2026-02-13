@@ -40,10 +40,11 @@ Esme_oClock/
 ├── venv/                           # Virtual environment
 ├── requirements.txt                # flask, openpyxl
 ├── requirements-test.txt           # pytest, pytest-flask
-├── tests/                          # 117+ automated tests
+├── tests/                          # 128+ automated tests
 │   ├── conftest.py                 # Test fixtures
 │   ├── test_api_feeds.py           # CRUD endpoint tests
 │   ├── test_diaper.py              # Diaper tracking tests
+│   ├── test_vitamin.py             # Vitamin D tests
 │   ├── test_excel.py               # Data integrity tests
 │   ├── test_concurrent.py          # Thread safety tests
 │   ├── test_edge_cases.py          # Boundary condition tests
@@ -441,7 +442,31 @@ POST /api/feeds
 **Stats:**
 - `total_diaper_changes` - Count of diaper changes today
 - `last_diaper_minutes_ago` - Minutes since last diaper change
+- `total_diaper_changes` - Count of diaper changes today
+- `last_diaper_minutes_ago` - Minutes since last diaper change
 - `last_diaper_summary` - Description of last diaper change
+
+### Vitamin D Reminder
+
+**Added:** February 2026
+
+**Feature:** Daily tappable banner reminding parents to give Vitamin D drops.
+
+**Logic:**
+- Banner appears at midnight for the new day.
+- Tapping it logs a "Vitamin D" entry.
+- **Lazy Auto-Log:** If a user opens the app today, and *yesterday* had feeds but NO vitamin log, the system automatically logs a "Missed" entry for yesterday.
+
+**API:**
+- `GET /api/vitamin-status` - Checks if vitamin was given today.
+- `POST /api/vitamin` - Logs administration.
+
+**Stats:**
+- Vitamin D entries are **excluded** from:
+  - Last feed timer
+  - Total ml today
+  - Feed counts
+  - Diaper stats
 
 ### Feature Flags
 
