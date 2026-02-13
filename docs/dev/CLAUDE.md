@@ -18,6 +18,7 @@ This is a **mobile-first web application** for tracking baby feeding sessions (b
 | **Data Storage** | Excel (.xlsx via openpyxl) | Parents can open/view anytime in Excel/Sheets |
 | **Frontend** | Single HTML file with inline CSS/JS | No build step, works offline after first load |
 | **Voice Input** | Browser Web Speech API | Built into Safari/Chrome, no API keys needed |
+| **Charts** | Chart.js (v4 CDN) | Lightweight, mobile-friendly canvas rendering |
 | **Server** | Development server on port 8080 | Runs on local network, no internet required |
 
 **Key Design Decision:** Everything is intentionally simple and self-contained. No databases, no frameworks, no cloud services.
@@ -40,10 +41,11 @@ Esme_oClock/
 ├── venv/                           # Virtual environment
 ├── requirements.txt                # flask, openpyxl
 ├── requirements-test.txt           # pytest, pytest-flask
-├── tests/                          # 117+ automated tests
+├── tests/                          # 128+ automated tests
 │   ├── conftest.py                 # Test fixtures
 │   ├── test_api_feeds.py           # CRUD endpoint tests
 │   ├── test_diaper.py              # Diaper tracking tests
+│   ├── test_vitamin.py             # Vitamin D tests
 │   ├── test_excel.py               # Data integrity tests
 │   ├── test_concurrent.py          # Thread safety tests
 │   ├── test_edge_cases.py          # Boundary condition tests
@@ -312,6 +314,24 @@ This bug was fixed in commit that reordered keyword checks.
 - The "Undo" button (in toast) is **only** shown for newly created feeds (`POST`).
 - It is hidden for edits (`PUT`) to avoid confusion/bugs where undo wouldn't revert edits.
 
+### 11. Charts Implementation (Feb 2026)
+
+**Architecture:**
+- **Client-Side Aggregation:** `loadChartData(days)` fetches raw feed JSON from `/api/feeds` and groups/sums data in JavaScript.
+- **No New Endpoints:** Reuses existing API with `?limit_days=N`.
+- **Rendering:** 3 separate `<canvas>` elements using Chart.js v4.
+
+**Chart Types:**
+1. **Milk Intake:** Bar chart + Goal Line (500ml).
+2. **Diapers:** Stacked bar (Pee/Poop/Both).
+3. **Timeline:** Scatter plot.
+   - **Y-Axis Logic:** Linear scale 0-24. 12am=0, 12pm=12, 11:59pm=23.9. Formatted via callback.
+   - **X-Axis:** Categorical dates.
+
+**State:**
+- Charts are re-rendered on tab switch or range change (7/14/30 days).
+- Uses `destroy()` on chart instances before re-creating to prevent canvas reuse errors.
+
 ---
 
 ## API Endpoints
@@ -441,7 +461,31 @@ POST /api/feeds
 **Stats:**
 - `total_diaper_changes` - Count of diaper changes today
 - `last_diaper_minutes_ago` - Minutes since last diaper change
+- `total_diaper_changes` - Count of diaper changes today
+- `last_diaper_minutes_ago` - Minutes since last diaper change
 - `last_diaper_summary` - Description of last diaper change
+
+### Vitamin D Reminder
+
+**Added:** February 2026
+
+**Feature:** Daily tappable banner reminding parents to give Vitamin D drops.
+
+**Logic:**
+- Banner appears at midnight for the new day.
+- Tapping it logs a "Vitamin D" entry.
+- **Lazy Auto-Log:** If a user opens the app today, and *yesterday* had feeds but NO vitamin log, the system automatically logs a "Missed" entry for yesterday.
+
+**API:**
+- `GET /api/vitamin-status` - Checks if vitamin was given today.
+- `POST /api/vitamin` - Logs administration.
+
+**Stats:**
+- Vitamin D entries are **excluded** from:
+  - Last feed timer
+  - Total ml today
+  - Feed counts
+  - Diaper stats
 
 ### Feature Flags
 
@@ -952,8 +996,7 @@ Before committing:
 ### Medium Priority
 5. **SQLite migration** - Better performance at scale
 6. **Offline mode** - localStorage + sync when online
-7. **Charts/graphs** - Visualize feeding patterns
-8. **Night mode toggle** - Manual dark/light switch
+7. **Night mode toggle** - Manual dark/light switch
 
 ### Low Priority
 9. **Multi-baby support** - Track twins
@@ -1005,7 +1048,13 @@ Before committing:
 - 111 automated tests (all passing)
 - Thread-safe concurrent writes
 - Timezone bug fixed
+- Timezone bug fixed
 - Port changed to 8080 (from 5000)
+
+**v1.1 (Charts)** - February 13, 2026
+- Added Charts tab with 3 visualizations
+- Daily Milk Intake, Diaper Changes, Feed Timeline
+- 7/14/30 day date ranges
 
 ---
 

@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1a1f2e">
     <link rel="manifest" href="/static/manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
     <style>
         * {
@@ -881,6 +882,88 @@
                 transform: translateY(-10px);
             }
         }
+
+        /* Tab Bar */
+        .tab-bar {
+            display: flex;
+            background: #252b3b;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #a8adb8;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .tab-btn.active {
+            background: #4A90D9;
+            color: white;
+        }
+
+        /* Chart View */
+        .chart-range-selector {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .range-btn {
+            background: #2d3548;
+            border: 2px solid #3d4556;
+            border-radius: 10px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #a8adb8;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .range-btn.active {
+            background: #4A90D9;
+            border-color: #4A90D9;
+            color: white;
+        }
+
+        .chart-card {
+            background: #252b3b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #e8eaed;
+        }
+
+        .chart-card canvas {
+            width: 100% !important;
+            max-height: 260px;
+        }
+
+        .chart-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a8adb8;
+            font-size: 15px;
+        }
     </style>
 </head>
 
@@ -891,254 +974,288 @@
         <div id="liveClock" class="live-clock">--:--</div>
     </div>
 
-    <!-- Who's logging toggle -->
-    <div class="who-toggle">
-        <button class="who-btn active" data-who="Mom">Mom</button>
-        <button class="who-btn" data-who="Dad">Dad</button>
+    <!-- Tab Bar -->
+    <div class="tab-bar" id="tabBar">
+        <button class="tab-btn active" data-tab="tracker">Tracker</button>
+        <button class="tab-btn" data-tab="charts">📈 Charts</button>
     </div>
 
-    <!-- Vitamin D Reminder -->
-    <div class="vitamin-reminder" id="vitaminReminder" style="display: none;" onclick="logVitamin()">
-        <span class="vitamin-icon">☀️</span>
-        <span class="vitamin-text">Tap to give Vitamin D drops</span>
-        <span class="vitamin-check" id="vitaminCheck">✓</span>
-    </div>
+    <!-- Tracker View -->
+    <div id="trackerView">
 
-    <!-- Last feed status -->
-    <div class="last-feed-container" id="lastFeedContainer">
-        <div class="last-feed-none">Loading...</div>
-    </div>
-
-    <!-- Daily Goal Progress -->
-    <div class="daily-goal-container" id="dailyGoalContainer" style="display: none;">
-        <div class="daily-goal-header">
-            <span class="daily-goal-title">Today's Total</span>
-            <span class="daily-goal-value" id="dailyGoalValue">-- / 500 ml</span>
+        <!-- Who's logging toggle -->
+        <div class="who-toggle">
+            <button class="who-btn active" data-who="Mom">Mom</button>
+            <button class="who-btn" data-who="Dad">Dad</button>
         </div>
-        <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="dailyGoalBar" style="width: 0%"></div>
+
+        <!-- Vitamin D Reminder -->
+        <div class="vitamin-reminder" id="vitaminReminder" style="display: none;" onclick="logVitamin()">
+            <span class="vitamin-icon">☀️</span>
+            <span class="vitamin-text">Tap to give Vitamin D drops</span>
+            <span class="vitamin-check" id="vitaminCheck">✓</span>
         </div>
-        <div class="daily-goal-status" id="dailyGoalStatus">Loading...</div>
-    </div>
 
-    <!-- Action buttons -->
-    <div class="action-grid">
-        <button class="action-btn bottle" id="bottleBtn">
-            <span class="emoji">🍼</span>
-            <span>Bottle</span>
-        </button>
-        <button class="action-btn nurse" id="nurseBtn">
-            <span class="emoji">🤱</span>
-            <span>Nurse</span>
-        </button>
-        <button class="action-btn pump" id="pumpBtn">
-            <span class="emoji">💧</span>
-            <span>Pump</span>
-        </button>
-        <button class="action-btn voice" id="voiceBtn">
-            <span class="emoji">🎤</span>
-            <span>Voice</span>
-        </button>
-        <button class="action-btn diaper" id="diaperBtn">
-            <span class="emoji">🍑</span>
-            <span>Diaper</span>
-        </button>
-    </div>
-
-    <!-- Today's log -->
-    <div class="log-section">
-        <div class="log-header" style="display:none"> <!-- Hidden in favor of grouped headers -->
-            <span>Today's Log</span>
-            <span class="stats-summary" id="statsText">—</span>
+        <!-- Last feed status -->
+        <div class="last-feed-container" id="lastFeedContainer">
+            <div class="last-feed-none">Loading...</div>
         </div>
-        <div class="feed-list" id="feedList">
-            <div class="loading">Loading feeds...</div>
-        </div>
-    </div>
 
-    <!-- Modals -->
-    <div class="modal" id="bottleModal">
-        <div class="modal-content">
-            <div class="modal-title">🍼 Bottle Feed</div>
-
-            <div class="tumbler-wrapper">
-                <div class="modal-subtitle">Select Amount</div>
-                <div class="tumbler-container">
-                    <div class="tumbler-highlight"></div>
-                    <div class="tumbler-column" id="bottleTens"></div>
-                    <div class="tumbler-column" id="bottleOnes"></div>
-                    <div class="tumbler-unit">ml</div>
-                </div>
+        <!-- Daily Goal Progress -->
+        <div class="daily-goal-container" id="dailyGoalContainer" style="display: none;">
+            <div class="daily-goal-header">
+                <span class="daily-goal-title">Today's Total</span>
+                <span class="daily-goal-value" id="dailyGoalValue">-- / 500 ml</span>
             </div>
-
-            <div class="expandable">
-                <button class="expandable-toggle" id="bottleMoreToggle">+ More options</button>
-                <div class="expandable-content" id="bottleMoreContent">
-                    <div class="custom-input-group">
-                        <label>Custom amount (ml)</label>
-                        <input type="number" class="custom-input" id="bottleCustomMl" placeholder="Optional override">
-                    </div>
-                    <div class="custom-input-group">
-                        <label>Duration (minutes)</label>
-                        <input type="number" class="custom-input" id="bottleDuration" placeholder="Optional">
-                    </div>
-                    <div class="custom-input-group">
-                        <label>Notes</label>
-                        <input type="text" class="custom-input" id="bottleNotes" placeholder="Optional">
-                    </div>
-                    <div class="custom-input-group">
-                        <label>Time</label>
-                        <input type="time" class="custom-input" id="bottleTime">
-                    </div>
-                </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="dailyGoalBar" style="width: 0%"></div>
             </div>
-            <div class="modal-actions">
-                <button class="modal-btn secondary" id="bottleCancel">Cancel</button>
-                <button class="modal-btn" id="bottleSelect">Select</button>
+            <div class="daily-goal-status" id="dailyGoalStatus">Loading...</div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="action-grid">
+            <button class="action-btn bottle" id="bottleBtn">
+                <span class="emoji">🍼</span>
+                <span>Bottle</span>
+            </button>
+            <button class="action-btn nurse" id="nurseBtn">
+                <span class="emoji">🤱</span>
+                <span>Nurse</span>
+            </button>
+            <button class="action-btn pump" id="pumpBtn">
+                <span class="emoji">💧</span>
+                <span>Pump</span>
+            </button>
+            <button class="action-btn voice" id="voiceBtn">
+                <span class="emoji">🎤</span>
+                <span>Voice</span>
+            </button>
+            <button class="action-btn diaper" id="diaperBtn">
+                <span class="emoji">🍑</span>
+                <span>Diaper</span>
+            </button>
+        </div>
+
+        <!-- Today's log -->
+        <div class="log-section">
+            <div class="log-header" style="display:none"> <!-- Hidden in favor of grouped headers -->
+                <span>Today's Log</span>
+                <span class="stats-summary" id="statsText">—</span>
+            </div>
+            <div class="feed-list" id="feedList">
+                <div class="loading">Loading feeds...</div>
             </div>
         </div>
-    </div>
 
-    <div class="modal" id="nurseModal">
-        <div class="modal-content">
-            <div class="modal-title">🤱 Nursing</div>
-            <div class="side-selector">
-                <button class="side-btn" data-side="left">Left</button>
-                <button class="side-btn" data-side="right">Right</button>
-                <button class="side-btn" data-side="both">Both</button>
-            </div>
-            <div class="expandable">
-                <button class="expandable-toggle" id="nurseMoreToggle">+ More options</button>
-                <div class="expandable-content" id="nurseMoreContent">
-                    <div class="custom-input-group">
-                        <label>Duration (minutes)</label>
-                        <input type="number" class="custom-input" id="nurseDuration" placeholder="Optional">
-                    </div>
-                    <div class="custom-input-group">
-                        <label>Notes</label>
-                        <input type="text" class="custom-input" id="nurseNotes" placeholder="Optional">
-                    </div>
-                    <div class="custom-input-group">
-                        <label>Time</label>
-                        <input type="time" class="custom-input" id="nurseTime">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn secondary" id="nurseCancel">Cancel</button>
-            </div>
-        </div>
-    </div>
+        <!-- Modals -->
+        <div class="modal" id="bottleModal">
+            <div class="modal-content">
+                <div class="modal-title">🍼 Bottle Feed</div>
 
-    <div class="modal" id="pumpModal">
-        <div class="modal-content">
-            <div class="modal-title">💧 Pump</div>
-            <div class="side-selector">
-                <button class="side-btn pump-side-btn" data-side="left">Left</button>
-                <button class="side-btn pump-side-btn" data-side="right">Right</button>
-                <button class="side-btn pump-side-btn" data-side="both">Both</button>
-            </div>
-            <div id="pumpAmountSection" style="display: none;">
                 <div class="tumbler-wrapper">
                     <div class="modal-subtitle">Select Amount</div>
                     <div class="tumbler-container">
                         <div class="tumbler-highlight"></div>
-                        <div class="tumbler-column" id="pumpTens"></div>
-                        <div class="tumbler-column" id="pumpOnes"></div>
+                        <div class="tumbler-column" id="bottleTens"></div>
+                        <div class="tumbler-column" id="bottleOnes"></div>
                         <div class="tumbler-unit">ml</div>
                     </div>
                 </div>
 
                 <div class="expandable">
-                    <button class="expandable-toggle" id="pumpMoreToggle">+ More options</button>
-                    <div class="expandable-content" id="pumpMoreContent">
+                    <button class="expandable-toggle" id="bottleMoreToggle">+ More options</button>
+                    <div class="expandable-content" id="bottleMoreContent">
                         <div class="custom-input-group">
                             <label>Custom amount (ml)</label>
-                            <input type="number" class="custom-input" id="pumpCustomMl" placeholder="Optional override">
+                            <input type="number" class="custom-input" id="bottleCustomMl"
+                                placeholder="Optional override">
                         </div>
                         <div class="custom-input-group">
                             <label>Duration (minutes)</label>
-                            <input type="number" class="custom-input" id="pumpDuration" placeholder="Optional">
+                            <input type="number" class="custom-input" id="bottleDuration" placeholder="Optional">
                         </div>
                         <div class="custom-input-group">
                             <label>Notes</label>
-                            <input type="text" class="custom-input" id="pumpNotes" placeholder="Optional">
+                            <input type="text" class="custom-input" id="bottleNotes" placeholder="Optional">
                         </div>
                         <div class="custom-input-group">
                             <label>Time</label>
-                            <input type="time" class="custom-input" id="pumpTime">
+                            <input type="time" class="custom-input" id="bottleTime">
                         </div>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="modal-btn secondary" id="pumpCancel">Cancel</button>
-                    <button class="modal-btn" id="pumpSelect">Select</button>
+                    <button class="modal-btn secondary" id="bottleCancel">Cancel</button>
+                    <button class="modal-btn" id="bottleSelect">Select</button>
                 </div>
             </div>
-            <div id="pumpInitialActions" class="modal-actions">
-                <button class="modal-btn secondary" id="pumpCancelInitial">Cancel</button>
-            </div>
         </div>
-    </div>
 
-    <div class="modal" id="diaperModal">
-        <div class="modal-content">
-            <div class="modal-title">🍑 Diaper Change</div>
-
-            <div class="side-selector">
-                <button class="side-btn diaper-side-btn" data-type="pee">💧 Pee</button>
-                <button class="side-btn diaper-side-btn" data-type="poop">💩 Poop</button>
-                <button class="side-btn diaper-side-btn" data-type="both">Both</button>
-            </div>
-
-            <div class="expandable">
-                <button class="expandable-toggle" id="diaperMoreToggle">+ More options</button>
-                <div class="expandable-content" id="diaperMoreContent">
-                    <div class="custom-input-group">
-                        <label>Notes</label>
-                        <input type="text" class="custom-input" id="diaperNotes"
-                            placeholder="Optional notes (e.g., blowout, rash)">
-                    </div>
-                    <div class="custom-input-group">
-                        <label>Time</label>
-                        <input type="time" class="custom-input" id="diaperTime">
+        <div class="modal" id="nurseModal">
+            <div class="modal-content">
+                <div class="modal-title">🤱 Nursing</div>
+                <div class="side-selector">
+                    <button class="side-btn" data-side="left">Left</button>
+                    <button class="side-btn" data-side="right">Right</button>
+                    <button class="side-btn" data-side="both">Both</button>
+                </div>
+                <div class="expandable">
+                    <button class="expandable-toggle" id="nurseMoreToggle">+ More options</button>
+                    <div class="expandable-content" id="nurseMoreContent">
+                        <div class="custom-input-group">
+                            <label>Duration (minutes)</label>
+                            <input type="number" class="custom-input" id="nurseDuration" placeholder="Optional">
+                        </div>
+                        <div class="custom-input-group">
+                            <label>Notes</label>
+                            <input type="text" class="custom-input" id="nurseNotes" placeholder="Optional">
+                        </div>
+                        <div class="custom-input-group">
+                            <label>Time</label>
+                            <input type="time" class="custom-input" id="nurseTime">
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="modal-actions">
-                <button class="modal-btn secondary" id="diaperCancel">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="voiceModal">
-        <div class="modal-content">
-            <div class="modal-title">🎤 Voice Input</div>
-            <div class="voice-listening" id="voiceListening">
-                <div class="voice-animation">🎤</div>
-                <p>Listening...</p>
-                <p style="font-size: 14px; color: #a8adb8; margin-top: 8px;">
-                    Say something like:<br>
-                    "Bottle 80 ml"<br>
-                    "Nurse left 10 minutes"
-                </p>
-            </div>
-            <div class="voice-transcript" id="voiceTranscript"></div>
-            <div id="voiceParsedSection" style="display: none;">
-                <div class="voice-parsed" id="voiceParsed"></div>
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn secondary" id="voiceCancel">Cancel</button>
-                <button class="modal-btn" id="voiceConfirm" style="display: none;">Confirm</button>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" id="nurseCancel">Cancel</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast">
-        <span class="toast-message" id="toastMessage"></span>
-        <button class="toast-undo" id="toastUndo" style="display: none;">Undo</button>
+        <div class="modal" id="pumpModal">
+            <div class="modal-content">
+                <div class="modal-title">💧 Pump</div>
+                <div class="side-selector">
+                    <button class="side-btn pump-side-btn" data-side="left">Left</button>
+                    <button class="side-btn pump-side-btn" data-side="right">Right</button>
+                    <button class="side-btn pump-side-btn" data-side="both">Both</button>
+                </div>
+                <div id="pumpAmountSection" style="display: none;">
+                    <div class="tumbler-wrapper">
+                        <div class="modal-subtitle">Select Amount</div>
+                        <div class="tumbler-container">
+                            <div class="tumbler-highlight"></div>
+                            <div class="tumbler-column" id="pumpTens"></div>
+                            <div class="tumbler-column" id="pumpOnes"></div>
+                            <div class="tumbler-unit">ml</div>
+                        </div>
+                    </div>
+
+                    <div class="expandable">
+                        <button class="expandable-toggle" id="pumpMoreToggle">+ More options</button>
+                        <div class="expandable-content" id="pumpMoreContent">
+                            <div class="custom-input-group">
+                                <label>Custom amount (ml)</label>
+                                <input type="number" class="custom-input" id="pumpCustomMl"
+                                    placeholder="Optional override">
+                            </div>
+                            <div class="custom-input-group">
+                                <label>Duration (minutes)</label>
+                                <input type="number" class="custom-input" id="pumpDuration" placeholder="Optional">
+                            </div>
+                            <div class="custom-input-group">
+                                <label>Notes</label>
+                                <input type="text" class="custom-input" id="pumpNotes" placeholder="Optional">
+                            </div>
+                            <div class="custom-input-group">
+                                <label>Time</label>
+                                <input type="time" class="custom-input" id="pumpTime">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn secondary" id="pumpCancel">Cancel</button>
+                        <button class="modal-btn" id="pumpSelect">Select</button>
+                    </div>
+                </div>
+                <div id="pumpInitialActions" class="modal-actions">
+                    <button class="modal-btn secondary" id="pumpCancelInitial">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="diaperModal">
+            <div class="modal-content">
+                <div class="modal-title">🍑 Diaper Change</div>
+
+                <div class="side-selector">
+                    <button class="side-btn diaper-side-btn" data-type="pee">💧 Pee</button>
+                    <button class="side-btn diaper-side-btn" data-type="poop">💩 Poop</button>
+                    <button class="side-btn diaper-side-btn" data-type="both">Both</button>
+                </div>
+
+                <div class="expandable">
+                    <button class="expandable-toggle" id="diaperMoreToggle">+ More options</button>
+                    <div class="expandable-content" id="diaperMoreContent">
+                        <div class="custom-input-group">
+                            <label>Notes</label>
+                            <input type="text" class="custom-input" id="diaperNotes"
+                                placeholder="Optional notes (e.g., blowout, rash)">
+                        </div>
+                        <div class="custom-input-group">
+                            <label>Time</label>
+                            <input type="time" class="custom-input" id="diaperTime">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" id="diaperCancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="voiceModal">
+            <div class="modal-content">
+                <div class="modal-title">🎤 Voice Input</div>
+                <div class="voice-listening" id="voiceListening">
+                    <div class="voice-animation">🎤</div>
+                    <p>Listening...</p>
+                    <p style="font-size: 14px; color: #a8adb8; margin-top: 8px;">
+                        Say something like:<br>
+                        "Bottle 80 ml"<br>
+                        "Nurse left 10 minutes"
+                    </p>
+                </div>
+                <div class="voice-transcript" id="voiceTranscript"></div>
+                <div id="voiceParsedSection" style="display: none;">
+                    <div class="voice-parsed" id="voiceParsed"></div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" id="voiceCancel">Cancel</button>
+                    <button class="modal-btn" id="voiceConfirm" style="display: none;">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast">
+            <span class="toast-message" id="toastMessage"></span>
+            <button class="toast-undo" id="toastUndo" style="display: none;">Undo</button>
+        </div>
+
+    </div><!-- /trackerView -->
+
+    <!-- Charts View -->
+    <div id="chartsView" style="display: none;">
+        <div class="chart-range-selector">
+            <button class="range-btn active" data-range="7">7d</button>
+            <button class="range-btn" data-range="14">14d</button>
+            <button class="range-btn" data-range="30">30d</button>
+        </div>
+        <div class="chart-card">
+            <h3>📊 Daily Milk Intake</h3>
+            <canvas id="milkChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>🍑 Diaper Changes</h3>
+            <canvas id="diaperChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>🕐 Feed Timeline</h3>
+            <canvas id="timelineChart"></canvas>
+        </div>
     </div>
 
     <script>
@@ -2290,6 +2407,479 @@
                 console.error('Error logging vitamin:', error);
                 vitaminLogging = false;
             }
+        }
+
+        // ==========================================
+        // CHARTS FUNCTIONALITY
+        // ==========================================
+
+        let currentChartRange = 7;
+        let milkChartInstance = null;
+        let diaperChartInstance = null;
+        let timelineChartInstance = null;
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.getElementById('trackerView').style.display = tab === 'tracker' ? '' : 'none';
+                document.getElementById('chartsView').style.display = tab === 'charts' ? '' : 'none';
+
+                if (tab === 'charts') {
+                    loadChartData(currentChartRange);
+                }
+            });
+        });
+
+        // Range selector
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentChartRange = parseInt(btn.dataset.range);
+                loadChartData(currentChartRange);
+            });
+        });
+
+        // Load chart data from API
+        async function loadChartData(days) {
+            try {
+                const response = await fetch(`/api/feeds?limit_days=${days}`);
+                const data = await response.json();
+                renderMilkChart(data.feeds, days);
+                renderDiaperChart(data.feeds, days);
+                renderTimelineChart(data.feeds, days);
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+
+        // Aggregate feeds by date — returns { 'YYYY-MM-DD': totalMl, ... }
+        function aggregateMilkByDate(feeds, days) {
+            // Build list of date labels for the range
+            const dates = [];
+            const today = new Date();
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+
+            // Sum ml per date (exclude diapers and vitamins)
+            const totals = {};
+            dates.forEach(d => totals[d] = 0);
+            feeds.forEach(feed => {
+                if (feed.type.includes('Diaper') || feed.type.includes('Vitamin')) return;
+                if (feed.amount_ml && feed.amount_ml <= 500 && totals.hasOwnProperty(feed.date)) {
+                    totals[feed.date] += feed.amount_ml;
+                }
+            });
+
+            return { dates, totals };
+        }
+
+        // Format date label for chart axis
+        function formatDateLabel(dateStr) {
+            const d = new Date(dateStr + 'T12:00:00');
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            if (dateStr === today.toISOString().split('T')[0]) return 'Today';
+            if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yest.';
+
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return days[d.getDay()] + ' ' + d.getDate();
+        }
+
+        // Render Daily Milk Intake bar chart
+        function renderMilkChart(feeds, days) {
+            const { dates, totals } = aggregateMilkByDate(feeds, days);
+            const labels = dates.map(formatDateLabel);
+            const values = dates.map(d => totals[d]);
+
+            if (milkChartInstance) {
+                milkChartInstance.destroy();
+            }
+
+            const ctx = document.getElementById('milkChart').getContext('2d');
+            milkChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Milk (ml)',
+                        data: values,
+                        backgroundColor: values.map(v => v >= 500 ? '#9C87E8' : '#4A90D9'),
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#252b3b',
+                            titleColor: '#e8eaed',
+                            bodyColor: '#a8adb8',
+                            borderColor: '#3d4556',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 10,
+                            callbacks: {
+                                label: function (context) {
+                                    return context.parsed.y + ' ml';
+                                }
+                            }
+                        },
+                        // Goal line annotation (using a simple plugin)
+                        annotation: undefined
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#a8adb8',
+                                font: { size: 11 },
+                                maxRotation: 0
+                            },
+                            grid: { display: false },
+                            border: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 600,
+                            ticks: {
+                                color: '#a8adb8',
+                                font: { size: 11 },
+                                stepSize: 100,
+                                callback: function (val) { return val + ' ml'; }
+                            },
+                            grid: {
+                                color: '#2d3548',
+                                drawBorder: false
+                            },
+                            border: { display: false }
+                        }
+                    },
+                    layout: {
+                        padding: { top: 10, bottom: 5 }
+                    }
+                },
+                plugins: [{
+                    // Custom plugin to draw the 500ml goal line
+                    id: 'goalLine',
+                    afterDraw: function (chart) {
+                        const yScale = chart.scales.y;
+                        const goalY = yScale.getPixelForValue(500);
+                        const ctx = chart.ctx;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.setLineDash([6, 4]);
+                        ctx.strokeStyle = '#F5A623';
+                        ctx.lineWidth = 2;
+                        ctx.moveTo(chart.chartArea.left, goalY);
+                        ctx.lineTo(chart.chartArea.right, goalY);
+                        ctx.stroke();
+
+                        // Label
+                        ctx.fillStyle = '#F5A623';
+                        ctx.font = '11px -apple-system, sans-serif';
+                        ctx.textAlign = 'right';
+                        ctx.fillText('500ml goal', chart.chartArea.right, goalY - 6);
+                        ctx.restore();
+                    }
+                }]
+            });
+        }
+
+        // Aggregate Diapers by date
+        function aggregateDiapersByDate(feeds, days) {
+            const dates = [];
+            const today = new Date();
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+
+            // Initialize counters
+            const data = {
+                dates: dates,
+                pee: dates.map(() => 0),
+                poop: dates.map(() => 0),
+                both: dates.map(() => 0)
+            };
+
+            feeds.forEach(feed => {
+                if (!feed.type.includes('Diaper')) return;
+
+                const dayIndex = dates.indexOf(feed.date);
+                if (dayIndex === -1) return;
+
+                // Check notes/details for type
+                // The logical "type" in Excel is just "Diaper". 
+                // We need to parse the "notes" or "amount" or however it was stored.
+                // Let's check how diaper data is stored.
+                // Looking at past context/index.html:
+                // Diaper logging sends: type="Diaper", notes="Pee" | "Poop" | "Both"
+                // So we check feed.notes
+
+                const type = (feed.notes || '').toLowerCase();
+
+                if (type.includes('both') || (type.includes('pee') && type.includes('poop'))) {
+                    data.both[dayIndex]++;
+                } else if (type.includes('poop')) {
+                    data.poop[dayIndex]++;
+                } else {
+                    // Default to pee if not specified, or if explicit 'pee'
+                    data.pee[dayIndex]++;
+                }
+            });
+
+            return data;
+        }
+
+        // Render Diaper Stacked Bar Chart
+        function renderDiaperChart(feeds, days) {
+            const data = aggregateDiapersByDate(feeds, days);
+            const labels = data.dates.map(formatDateLabel);
+
+            if (diaperChartInstance) {
+                diaperChartInstance.destroy();
+            }
+
+            const ctx = document.getElementById('diaperChart').getContext('2d');
+            diaperChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Both',
+                            data: data.both,
+                            backgroundColor: '#5E4B8A', // Dark purple
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Poop',
+                            data: data.poop,
+                            backgroundColor: '#9C87E8', // Main purple
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Pee',
+                            data: data.pee,
+                            backgroundColor: '#D4C4FB', // Light purple
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: {
+                                color: '#a8adb8',
+                                font: { size: 11 },
+                                maxRotation: 0
+                            },
+                            grid: { display: false },
+                            border: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                color: '#a8adb8',
+                                font: { size: 11 }
+                            },
+                            grid: {
+                                color: '#2d3548',
+                                drawBorder: false
+                            },
+                            border: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: '#a8adb8',
+                                boxWidth: 12,
+                                padding: 20,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#252b3b',
+                            titleColor: '#e8eaed',
+                            bodyColor: '#a8adb8',
+                            borderColor: '#3d4556',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 10
+                        }
+                    },
+                    layout: {
+                        padding: { top: 10, bottom: 5 }
+                    }
+                }
+            });
+        }
+
+        // Render Feed Timeline Chart (Scatter)
+        function renderTimelineChart(feeds, days) {
+            // 1. Prepare datasets
+            const bottleData = [];
+            const nurseData = [];
+            const pumpData = [];
+
+            // 2. Filter key dates (for X axis categories)
+            const dates = [];
+            const today = new Date();
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+
+            feeds.forEach(feed => {
+                // Parse date/time
+                if (!feed.timestamp) return;
+                const dt = new Date(feed.timestamp);
+
+                // Match feed.date to our X-axis categories
+                if (!dates.includes(feed.date)) return; // Outside range
+
+                // Y value: Decimal hours (0-24)
+                const yVal = dt.getHours() + (dt.getMinutes() / 60);
+
+                const point = { x: feed.date, y: yVal };
+
+                if (feed.type.includes('Bottle')) {
+                    bottleData.push(point);
+                } else if (feed.type.includes('Nurse')) {
+                    nurseData.push(point);
+                } else if (feed.type.includes('Pump')) {
+                    pumpData.push(point);
+                }
+            });
+
+            if (timelineChartInstance) timelineChartInstance.destroy();
+
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            timelineChartInstance = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    labels: dates, // X-axis categories
+                    datasets: [
+                        {
+                            label: 'Bottle',
+                            data: bottleData,
+                            backgroundColor: '#4A90D9', // Blue
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Nurse',
+                            data: nurseData,
+                            backgroundColor: '#E8877C', // Pink
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Pump',
+                            data: pumpData,
+                            backgroundColor: '#5CB8B2', // Teal
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'category',
+                            offset: true,
+                            ticks: {
+                                color: '#a8adb8',
+                                font: { size: 11 },
+                                maxRotation: 0,
+                                callback: function (val, index) {
+                                    // val is index? or label? Chart.js category scale usually passes index or label depending on version.
+                                    // but we can access `this.getLabelForValue(val)`
+                                    const label = this.getLabelForValue(val);
+                                    const d = new Date(label + 'T12:00:00'); // Safe parsing
+                                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                    return days[d.getDay()] + ' ' + d.getDate();
+                                }
+                            },
+                            grid: {
+                                color: '#2d3548',
+                                drawBorder: false
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 24,
+                            reverse: true, // 12 AM at top (0), 11 PM at bottom (23)? Or normal? Timeline usually runs down? 
+                            // Let's stick to normal graph behavior (0 bottom, 24 top) for now as requested in plan "12am - 11pm"
+                            // Plan diagram showed 11pm at TOP.
+                            // So reverse: false.
+                            ticks: {
+                                stepSize: 3,
+                                color: '#a8adb8',
+                                font: { size: 11 },
+                                callback: function (val) {
+                                    if (val === 0 || val === 24) return '12 AM';
+                                    if (val === 12) return '12 PM';
+                                    if (val < 12) return val + ' AM';
+                                    return (val - 12) + ' PM';
+                                }
+                            },
+                            grid: {
+                                color: '#2d3548',
+                                drawBorder: false
+                            },
+                            border: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#a8adb8', boxWidth: 10, padding: 20, font: { size: 11 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const val = context.parsed.y;
+                                    const h = Math.floor(val);
+                                    const m = Math.floor((val - h) * 60);
+                                    const ampm = h >= 12 && h < 24 ? 'PM' : 'AM'; // Fix 24->AM
+                                    const h12 = h % 12 || 12;
+                                    const mStr = m.toString().padStart(2, '0');
+                                    return `${context.dataset.label}: ${h12}:${mStr} ${ampm}`;
+                                }
+                            }
+                        }
+                    },
+                    layout: { padding: { top: 10, bottom: 5 } }
+                }
+            });
         }
 
         // Initial load

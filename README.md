@@ -10,10 +10,12 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 - **Voice input**: Hands-free logging using your phone's built-in speech recognition (hidden behind feature flag)
 - **Last feed status**: See at a glance how long it's been since the last feed
 - **Last diaper status**: See how long since the last diaper change
+- **Vitamin D Reminder**: Daily banner that reminds you to give drops (resets at midnight)
 - **Next Feed Timer**: Countdown to the next 3-hour mark (turns red when overdue)
 - **Daily Goal**: Visual progress bar tracking today's milk intake towards 500ml goal
 - **Today's log**: View all feeds for the day in reverse chronological order
 - **History**: View the last 7 days of feeds and diaper changes, grouped by Today, Yesterday, and date
+- **Charts**: Visualize daily milk intake, diaper changes, and feed timeline trends (7/14/30 days)
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
 - **Mobile-optimized**: Big touch targets, dark mode, works great on phones
 - **Local network**: Access from any phone on your WiFi — no cloud, no accounts
@@ -23,6 +25,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 
 - **Backend**: Python 3 + Flask
 - **Frontend**: Single HTML page (no frameworks)
+- **Charts**: Chart.js (via CDN)
 - **Data**: Excel `.xlsx` file via `openpyxl`
 - **Voice**: Browser Web Speech API (Safari/Chrome)
 
@@ -73,6 +76,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
 4. **Diaper**: Tap 🍑 → Select type (Pee/Poop/Both) → Done
+5. **Vitamin D**: Tap the yellow banner ☀️ at the top of the screen → Done
 
 ### Voice Input Examples
 
@@ -101,6 +105,16 @@ All feeds are saved to `feeds.xlsx` in the project directory. The Excel file con
 | Timestamp | ISO 8601 timestamp for sorting |
 
 You can open this file in Excel, Google Sheets, or Numbers anytime to view or analyze the data.
+
+## Data Visualization
+
+The app includes a dedicated **Charts** tab to visualize trends:
+
+1. **Daily Milk Intake**: Blue bars showing total ml vs 500ml daily goal.
+2. **Diaper Changes**: Stacked purple bars showing Pee/Poop/Both counts.
+3. **Feed Timeline**: Scatter plot showing feeding patterns by time of day.
+
+Tap the "7d", "14d", or "30d" buttons to change the date range.
 
 ## Network Access
 
@@ -180,7 +194,6 @@ baby-tracker/
 
 - No cloud hosting or sync
 - No user accounts or authentication
-- No complex charts or analytics
 - No mobile apps (it's a web app — just bookmark it)
 - No internet required (works entirely on your local network)
 
