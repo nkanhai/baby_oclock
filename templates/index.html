@@ -1276,6 +1276,10 @@
             <canvas id="diaperChart"></canvas>
         </div>
         <div class="chart-card">
+            <h3>💧 Daily Pumping Output</h3>
+            <canvas id="pumpChart"></canvas>
+        </div>
+        <div class="chart-card">
             <h3>🕐 Feed Timeline</h3>
             <canvas id="timelineChart"></canvas>
         </div>
@@ -2532,6 +2536,7 @@
         let currentChartRange = 7;
         let milkChartInstance = null;
         let diaperChartInstance = null;
+        let pumpChartInstance = null;
         let timelineChartInstance = null;
 
         // Tab switching
@@ -2567,6 +2572,7 @@
                 const data = await response.json();
                 renderMilkChart(data.feeds, days);
                 renderDiaperChart(data.feeds, days);
+                renderPumpChart(data.feeds, days);
                 renderTimelineChart(data.feeds, days);
             } catch (error) {
                 console.error('Error loading chart data:', error);
@@ -2898,6 +2904,110 @@
                             borderWidth: 1,
                             cornerRadius: 8,
                             padding: 10
+                        }
+                    },
+                    layout: {
+                        padding: { top: 10, bottom: 5 }
+                    }
+                }
+            });
+        }
+
+        // Aggregate Pump Amount by date
+        function aggregatePumpByDate(feeds, days) {
+            const dates = [];
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                dates.push(`${year}-${month}-${day}`);
+            }
+
+            const amounts = dates.map(() => 0);
+
+            feeds.forEach(feed => {
+                if (!feed.type.includes('Pump')) return;
+
+                const dayIndex = dates.indexOf(feed.date);
+                if (dayIndex === -1) return;
+
+                if (feed.amount_ml) {
+                    amounts[dayIndex] += feed.amount_ml;
+                }
+            });
+
+            return { dates, amounts };
+        }
+
+        // Render Pump Amount Chart
+        function renderPumpChart(feeds, days) {
+            const { dates, amounts } = aggregatePumpByDate(feeds, days);
+            const labels = dates.map(formatChartLabel);
+
+            if (pumpChartInstance) {
+                pumpChartInstance.destroy();
+            }
+
+            const ctx = document.getElementById('pumpChart').getContext('2d');
+            pumpChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pumped Output',
+                        data: amounts,
+                        backgroundColor: '#5CB8B2', // Teal
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false // Single series, no legend needed
+                        },
+                        tooltip: {
+                            backgroundColor: '#252b3b',
+                            titleColor: '#e8eaed',
+                            bodyColor: '#a8adb8',
+                            borderColor: '#3d4556',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 10,
+                            callbacks: {
+                                label: function (context) {
+                                    return context.parsed.y + ' ml';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#a8adb8',
+                                font: { size: 11 },
+                                maxRotation: 0
+                            },
+                            grid: { display: false },
+                            border: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#a8adb8',
+                                font: { size: 11 },
+                                callback: function (val) { return val + ' ml'; }
+                            },
+                            grid: {
+                                color: '#2d3548',
+                                drawBorder: false
+                            },
+                            border: { display: false }
                         }
                     },
                     layout: {

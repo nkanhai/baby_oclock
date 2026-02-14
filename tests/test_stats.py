@@ -45,7 +45,7 @@ class TestStatsEndpoint:
         response = client.get('/api/stats')
         data = response.get_json()['today']
 
-        assert data['total_ml'] == 210.0
+        assert data['total_ml'] == 90.0
         assert data['total_pump_ml'] == 120.0
 
     def test_total_feeds_today(self, client, today_str):
@@ -68,7 +68,10 @@ class TestStatsEndpoint:
         response = client.get('/api/stats')
         data = response.get_json()['today']
 
-        assert data['total_feeds'] == 5
+        # Stats only count Bottles, so should be 3
+        assert data['total_feeds'] == 3
+        # Nurse sessions tracked separately
+        assert data['total_nursing_sessions'] == 2
 
     def test_nursing_session_count(self, client, today_str):
         """Nursing session count is correct"""
@@ -185,8 +188,8 @@ class TestStatsEndpoint:
 
         # Total ml should only be from bottle
         assert data['total_ml'] == 90.0
-        # But total feeds should be 2
-        assert data['total_feeds'] == 2
+        # But total feeds should be 1 (stats only count bottles)
+        assert data['total_feeds'] == 1
 
     def test_pump_oz_separate_from_bottle_oz(self, client, today_str):
         """Pump ml is tracked separately"""
@@ -205,5 +208,5 @@ class TestStatsEndpoint:
         response = client.get('/api/stats')
         data = response.get_json()['today']
 
-        assert data['total_ml'] == 240.0  # Both combined
+        assert data['total_ml'] == 90.0  # Only bottles
         assert data['total_pump_ml'] == 150.0  # Just pump
