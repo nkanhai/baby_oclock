@@ -257,6 +257,39 @@ class TestReadFeeds:
         assert data['total_feeds_today'] == 3
 
 
+    def test_pump_and_diaper_excluded_from_totals(self, client, today_str):
+        """Pump and diaper entries should not count towards total feeds or ml"""
+        # Add a bottle feed (should count)
+        client.post('/api/feeds', json={
+            "type": "bottle",
+            "amount_ml": 100.0,
+            "timestamp": f"{today_str}T10:00:00"
+        })
+        
+        # Add a pump session (should NOT count)
+        client.post('/api/feeds', json={
+            "type": "pump",
+            "side": "both",
+            "amount_ml": 150.0,
+            "timestamp": f"{today_str}T11:00:00"
+        })
+        
+        # Add a diaper change (should NOT count)
+        client.post('/api/feeds', json={
+            "type": "diaper",
+            "side": "pee",
+            "timestamp": f"{today_str}T12:00:00"
+        })
+
+        response = client.get('/api/feeds')
+        data = response.get_json()
+
+        # Should only count the 1 bottle feed
+        assert data['total_feeds_today'] == 1
+        # Should only sum the 1 bottle amount
+        assert data['total_ml_today'] == 100.0
+
+
 class TestDeleteFeed:
     """Test DELETE /api/feeds/<id>"""
 

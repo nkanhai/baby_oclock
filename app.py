@@ -346,12 +346,17 @@ def get_feeds():
                 last_diaper_summary = f"{feed['type']} at {feed['time']}"
                 break
 
-        # Calculate total ml and feed count (exclude Vitamin D)
+        # Calculate total ml and feed count (only Bottle and Nurse)
         for feed in feeds:
             if "Vitamin D" in feed["type"]:
                 continue
-            total_feeds_today += 1
-            if feed["amount_ml"]:
+            
+            # Only count Bottle and Nurse as "feeds"
+            if "Feed (Bottle" in feed["type"] or "Nurse" in feed["type"]:
+                total_feeds_today += 1
+            
+            # Only sum ml from Bottle feeds (baby's intake, not pump output)
+            if "Feed (Bottle" in feed["type"] and feed["amount_ml"]:
                 total_ml_today += feed["amount_ml"]
 
     return jsonify({
