@@ -81,7 +81,12 @@ def init_excel_file():
 def format_feed_type(feed_type, side=None):
     """Convert feed type and side into Excel-friendly string."""
     if feed_type == "bottle":
-        return "Feed (Bottle)"
+        if side == "formula":
+            return "Feed (Bottle - Formula)"
+        elif side == "milk":
+            return "Feed (Bottle - Milk)"
+        else:
+            return "Feed (Bottle)"
     elif feed_type == "nurse":
         if side == "left":
             return "Nurse (Left)"
