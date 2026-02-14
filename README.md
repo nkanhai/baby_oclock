@@ -17,6 +17,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 - **Today's log**: View all feeds for the day in reverse chronological order
 - **History**: View the last 7 days of feeds and diaper changes, grouped by Today, Yesterday, and date
 - **Charts**: Visualize daily milk intake, diaper changes, and feed timeline trends (7/14/30 days)
+- **Swipe navigation**: Swipe left/right on mobile to quickly switch between Tracker and Charts tabs
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
 - **Mobile-optimized**: Big touch targets, dark mode, works great on phones
 - **Local network**: Access from any phone on your WiFi — no cloud, no accounts

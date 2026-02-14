@@ -1,34 +1,33 @@
-# PR: Manual Time Editing & Tumbler Conflict Fix
+# Fix Feed Count Stats & Add Swipe Navigation
 
 ## Summary
-This PR implements several key features and bug fixes requested to improve the usability of feed logging, specifically focusing on timestamp accuracy and conflict resolution between input methods.
+Two major improvements:
+1. **Bug Fix**: Corrected feed statistics to exclude pumps, diapers, and vitamins from daily totals.
+2. **New Feature**: Added swipe navigation to switch between Tracker and Charts tabs on mobile.
 
 ## Changes
 
-### 1. Manual Time Editing (Fixes Bug)
-- **Problem**: Previously, editing a log entry would reset its time to "now", losing the original timestamp.
-- **Fix**: The `editFeed` function now preserves the original time.
-- **Feature**: Added a `time` input field to the "More options" section of all modals (Bottle, Nurse, Pump, Diaper), allowing parents to effectively "backdate" feeds or correct timestamps.
+### 1. Feed Count Logic Fix
+- **Backend (`app.py`)**: Updated `get_feeds` to explicitly filter types (Bottle/Nurse only) for totals.
+- **Frontend (`index.html`)**: Updated "Today" stats calculation to match backend logic.
+- **Tests**: Added regression test `test_pump_and_diaper_excluded_from_totals`.
 
-### 2. Pump Time Tracking
-- **Feature**: Added the "Time" input field to the Pump modal.
-- **Implementation**: Updated `editFeed` and `logFeed` to correctly handle time updates for Pump entries, ensuring parity with other feed types.
+### 2. Swipe Navigation
+- **Frontend (`index.html`)**:
+    - Refactored tab switching into a reusable `switchTab` function.
+    - Added `touchstart` and `touchend` event listeners.
+    - Implemented swipe logic (Left -> Charts, Right -> Tracker).
 
-### 3. Tumbler vs Custom Input Resolution (Last Interaction Wins)
-- **Problem**: Users could unintentionally set conflicting amounts by using both the Tumbler wheel and the Custom Amount input.
-- **Fix**: Implemented "Last Interaction Wins" logic.
-    - Interacting with the **Tumbler** (scroll/click) automatically **clears** the Custom Amount input.
-    - Typing in the **Custom Amount** input overrides the Tumbler (standard behavior).
-- **Benefit**: Removes ambiguity and ensures the logged amount matches the user's last distinct action.
-
-### 4. Documentation
-- Updated `README.md` with new feature descriptions.
-- Updated `docs/dev/CLAUDE.md` with technical implementation details of the new features and logic.
+### 3. Documentation
+- Updated `README.md` to include Swipe Navigation in feature list.
+- Updated `CLAUDE.md` with implementation details for both features.
 
 ## Verification
-- **Automated Tests**: All 117 existing tests passed.
-- **Manual Verification**:
-    - Confirmed editing a log retains original time.
-    - Confirmed changing time in "More options" updates the log correctly.
-    - Confirmed Pump modal supports time editing.
-    - Confirmed scrolling Tumbler clears custom amount input.
+- **Automated Tests**: Ran full test suite. All tests passed.
+- **Manual Verification**: 
+  - Verified feed counts in browser (Bottles/Nurse only).
+  - Verified swipe navigation in browser simulation.
+
+## Related Issues
+- Incorrect feed tallies next to day tabs.
+- User request for swipe navigation.
