@@ -215,7 +215,9 @@ class TestReadFeeds:
             "timestamp": thirty_min_ago.isoformat()
         })
 
-        response = client.get('/api/feeds')
+        # Request the specific date properly to handle midnight boundary
+        query_date = thirty_min_ago.strftime("%Y-%m-%d")
+        response = client.get(f'/api/feeds?date={query_date}')
         data = response.get_json()
 
         # Should be approximately 30 minutes (allow some tolerance)

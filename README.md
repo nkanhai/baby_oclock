@@ -113,7 +113,8 @@ The app includes a dedicated **Charts** tab to visualize trends:
 
 1. **Daily Milk Intake**: Blue bars showing total ml vs 500ml daily goal.
 2. **Diaper Changes**: Stacked purple bars showing Pee/Poop/Both counts.
-3. **Feed Timeline**: Scatter plot showing feeding patterns by time of day.
+3. **Daily Pumping Output**: Teal bars showing total ml pumped per day.
+4. **Feed Timeline**: Scatter plot showing feeding patterns by time of day.
 
 Tap the "7d", "14d", or "30d" buttons to change the date range.
 
@@ -179,7 +180,7 @@ baby-tracker/
 ├── static/
 │   └── manifest.json      # PWA manifest
 ├── feeds.xlsx             # Auto-created data file
-├── tests/                 # 117+ automated tests
+├── tests/                 # 131 automated tests
 ├── docs/                  # Project Documentation
 │   ├── SETUP.md           # Setup intructions
 │   ├── maintenance/       # Migration, Maintenance, Troubleshooting

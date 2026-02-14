@@ -331,7 +331,11 @@ This bug was fixed in commit that reordered keyword checks.
    - **Metrics:** Sums only "Bottle" feeds (Milk + Formula). Excludes Pump and Nurse sessions to reflect baby's actual intake.
    - **Stacking:** Stacks "Breast Milk" vs "Formula".
 2. **Diapers:** Stacked bar (Pee/Poop/Both).
-3. **Timeline:** Scatter plot.
+3. **Daily Pumping Output:** Bar chart showing daily total pumped volume (Teal).
+   - **Metrics:** Sums only "Pump" entries by date.
+   - **Aggregation:** Client-side via `aggregatePumpByDate()` function.
+   - **Styling:** Teal (#5CB8B2) bars matching the pump type color in the timeline chart.
+4. **Timeline:** Scatter plot.
    - **Y-Axis Logic:** Linear scale 0-24. 12am=0, 12pm=12, 11:59pm=23.9. Formatted via callback.
    - **X-Axis:** Categorical dates.
 
@@ -623,6 +627,25 @@ pytest tests/ -v -s
 # Just one test
 pytest tests/test_api_feeds.py::TestCreateFeed::test_log_bottle_feed_with_amount -v
 ```
+
+### Test Fixes (February 2026)
+
+**Issue:** Several tests had incorrect expectations that didn't match the application's actual behavior.
+
+**Root Cause:** The `/api/stats` endpoint has always counted only **Bottle** feeds in `total_ml` and `total_feeds`. Pump and Nurse sessions are tracked separately in `total_pump_ml` and `total_nursing_sessions`. The tests were written with incorrect assumptions.
+
+**Changes Made:**
+- **`test_stats.py`**: Updated 4 test assertions to match actual app behavior:
+  - `total_ml` now correctly expects only Bottle amounts (not Bottle + Pump)
+  - `total_feeds` now correctly expects only Bottle count (not Bottle + Nurse)
+  - Pump and Nurse are verified via their separate fields
+- **`test_api_feeds.py`**: Fixed midnight edge case in `test_response_includes_last_feed_minutes_ago` by explicitly querying the feed's date
+- **`test_diaper.py`**: Fixed midnight edge case in `test_last_diaper_change_calculation` similarly
+
+**Important:** No application logic was changed. Only test expectations were corrected to match reality.
+
+**Dependencies Added:**
+- `requests` library (test-only dependency for `test_api.py`)
 
 ---
 
@@ -1063,6 +1086,12 @@ Before committing:
 - Added Charts tab with 3 visualizations
 - Daily Milk Intake, Diaper Changes, Feed Timeline
 - 7/14/30 day date ranges
+
+**v1.2 (Pump Chart + Test Fixes)** - February 14, 2026
+- Added "Daily Pumping Output" chart to Charts tab
+- Fixed 6 outdated test assertions in `test_stats.py`, `test_api_feeds.py`, and `test_diaper.py`
+- All 131 tests now passing
+- Added `requests` library as test dependency
 
 ---
 
