@@ -2067,14 +2067,20 @@
 
                     const todayGroup = groups[todayKey] || [];
                     let todayMl = 0;
+                    let todayFeedCount = 0;
                     todayGroup.forEach(f => {
-                        if (f.amount_ml && !f.type.toLowerCase().includes('pump') && !f.type.includes('Vitamin D')) {
+                        // Only count Bottle and Nurse as "feeds"
+                        if (f.type.includes('Feed (Bottle') || f.type.includes('Nurse')) {
+                            todayFeedCount++;
+                        }
+                        // Only sum ml from Bottle feeds (baby's intake, not pump output)
+                        if (f.type.includes('Feed (Bottle') && f.amount_ml) {
                             todayMl += f.amount_ml;
                         }
                     });
 
                     // const statsText = document.getElementById('statsText');
-                    statsText.textContent = `${todayGroup.length} feeds • ${Math.round(todayMl)} ml (Today)`;
+                    statsText.textContent = `${todayFeedCount} feeds • ${Math.round(todayMl)} ml (Today)`;
                 }
 
                 // Refresh vitamin status after loading feeds
@@ -2549,20 +2555,69 @@
         let timelineChartInstance = null;
 
         // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tab = btn.dataset.tab;
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                document.getElementById('trackerView').style.display = tab === 'tracker' ? '' : 'none';
-                document.getElementById('chartsView').style.display = tab === 'charts' ? '' : 'none';
-
-                if (tab === 'charts') {
-                    loadChartData(currentChartRange);
-                }
+        // Tab switching function
+        function switchTab(tab) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.tab === tab) b.classList.add('active');
             });
+
+            // Update views
+            const trackerView = document.getElementById('trackerView');
+            const chartsView = document.getElementById('chartsView');
+
+            if (tab === 'tracker') {
+                trackerView.style.display = '';
+                chartsView.style.display = 'none';
+            } else {
+                trackerView.style.display = 'none';
+                chartsView.style.display = '';
+                loadChartData(currentChartRange);
+            }
+        }
+
+        // Click listeners
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
         });
+
+        // Swipe Navigation Logic
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const touchEndY = e.changedTouches[0].screenY;
+            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+        }, { passive: true });
+
+        function handleSwipe(startX, startY, endX, endY) {
+            const diffX = endX - startX;
+            const diffY = endY - startY;
+
+            // Threshold: 50px, Horizontal > Vertical
+            if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                const currentBtn = document.querySelector('.tab-btn.active');
+                if (!currentBtn) return;
+
+                const currentTab = currentBtn.dataset.tab;
+
+                // Swipe Left (Go to Charts)
+                if (diffX < 0 && currentTab === 'tracker') {
+                    switchTab('charts');
+                }
+                // Swipe Right (Go to Tracker)
+                else if (diffX > 0 && currentTab === 'charts') {
+                    switchTab('tracker');
+                }
+            }
+        }
 
         // Range selector
         document.querySelectorAll('.range-btn').forEach(btn => {
