@@ -65,7 +65,10 @@ class TestDiaperTracking:
             "timestamp": timestamp
         })
 
-        response = client.get('/api/feeds')
+        # Query specific date to handle midnight boundary
+        timestamp_dt = datetime.now() - timedelta(minutes=30)
+        query_date = timestamp_dt.strftime("%Y-%m-%d")
+        response = client.get(f'/api/feeds?date={query_date}')
         data = response.get_json()
 
         assert data['last_diaper_minutes_ago'] is not None
