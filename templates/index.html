@@ -1868,10 +1868,12 @@
                 }
 
                 // --- Next Feed Timer Logic ---
-                // Find most recent FEED (not diaper, not vitamin) to calc next feed time
+                // Find most recent FEED (not diaper, not vitamin, NOT Pump) to calc next feed time
                 let lastFeedObj = null;
                 for (const feed of data.feeds) {
-                    if (!feed.type.toLowerCase().includes('diaper') && !feed.type.includes('Vitamin D')) {
+                    const type = feed.type.toLowerCase();
+                    // Must be Bottle or Nurse (exclude Pump, Diaper, Vitamin)
+                    if (type.includes('bottle') || type.includes('nurse')) {
                         lastFeedObj = feed;
                         break;
                     }
