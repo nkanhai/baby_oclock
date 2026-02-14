@@ -852,6 +852,16 @@ Load it: `launchctl load ~/Library/LaunchAgents/com.babytracker.plist`
 **Impact:** Medium (what if WiFi is down?)
 **Fix:** Could add offline mode with localStorage + sync
 
+### 8. Tracker Day Header Stats Bug (FIXED - Feb 2026)
+**Issue:** Day headers in Tracker view were counting ALL entries (Pump, Diaper, Vitamin D) in feed count and summing ALL ml amounts (including Pump output).
+**Impact:** High (misleading stats for parents tracking baby's actual intake)
+**Root Cause:** Lines 2018-2022 in `index.html` used `dayFeeds.length` (counts everything) and summed all `amount_ml` values without filtering by type.
+**Fix:** Updated calculation to:
+- Feed count: Only includes `Feed (Bottle)` and `Nurse` entries
+- ML total: Only sums `Feed (Bottle)` amounts (baby's intake, not pump output)
+**Code Location:** `templates/index.html` lines 2018-2030
+**Verification:** Browser testing confirmed correct counts after fix
+
 ---
 
 ## Performance Characteristics
@@ -1090,6 +1100,7 @@ Before committing:
 **v1.2 (Pump Chart + Test Fixes)** - February 14, 2026
 - Added "Daily Pumping Output" chart to Charts tab
 - Fixed 6 outdated test assertions in `test_stats.py`, `test_api_feeds.py`, and `test_diaper.py`
+- Fixed tracker day header stats to exclude Pump/Diaper/Vitamin D from feed counts
 - All 131 tests now passing
 - Added `requests` library as test dependency
 

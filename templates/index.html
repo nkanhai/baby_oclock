@@ -2015,10 +2015,19 @@
                         let openAttr = (isToday || isYesterday) ? 'open' : '';
                         let checkClass = (isToday || isYesterday) ? 'highlight-group' : '';
 
-                        // Recalculate stats for this group
+                        // Recalculate stats for this group (only Bottle and Nurse feeds)
                         let groupMl = 0;
-                        let groupCount = dayFeeds.length;
-                        dayFeeds.forEach(f => { if (f.amount_ml) groupMl += f.amount_ml; });
+                        let groupCount = 0;
+                        dayFeeds.forEach(f => {
+                            // Only count Bottle and Nurse as "feeds"
+                            if (f.type.includes('Feed (Bottle') || f.type.includes('Nurse')) {
+                                groupCount++;
+                            }
+                            // Only sum ml from Bottle feeds (baby's intake, not pump output)
+                            if (f.type.includes('Feed (Bottle') && f.amount_ml) {
+                                groupMl += f.amount_ml;
+                            }
+                        });
                         const groupStats = `${groupCount} feeds • ${Math.round(groupMl)} ml`;
 
                         html += `
