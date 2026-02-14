@@ -156,8 +156,13 @@ last_feed_minutes_ago = int((datetime.now() - last_timestamp).total_seconds() / 
 
 ```python
 def format_feed_type(feed_type, side=None):
-    if feed_type == "bottle":
-        return "Feed (Bottle)"
+    elif feed_type == "bottle":
+        if side == "formula":
+            return "Feed (Bottle - Formula)"
+        elif side == "milk":
+            return "Feed (Bottle - Milk)"
+        else:
+            return "Feed (Bottle)"
     elif feed_type == "nurse":
         if side == "left":
             return "Nurse (Left)"
@@ -171,8 +176,8 @@ def format_feed_type(feed_type, side=None):
         # ... etc
 ```
 
-**API accepts:** `{"type": "bottle", "side": null}`
-**Excel stores:** `"Feed (Bottle)"`
+**API accepts:** `{"type": "bottle", "side": "milk"}` or `{"side": "formula"}`
+**Excel stores:** `"Feed (Bottle - Milk)"` or `"Feed (Bottle - Formula)"`
 
 **Why:** Makes Excel file human-readable. Parents can open it and immediately understand what each entry means.
 
@@ -381,7 +386,7 @@ Updates feed entry by ID.
 ### State Management
 
 **Client-side state:**
-- `currentWho`: "Mom" or "Dad" (who's logging)
+- `currentWho`: "Mom" or "Dad" (persisted via `localStorage`)
 - `lastCreatedFeedId`: For undo functionality
 - `pumpSelectedSide`: Tracks pump side selection
 - `voiceParsedData`: Holds parsed voice input

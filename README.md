@@ -5,6 +5,8 @@ A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, min
 ## Features
 
 - **Quick logging**: Log a bottle feed in under 5 seconds with 3 taps
+- **Milk/Formula Split**: Track whether bottle feeds are Breast Milk or Formula
+- **Parent Persistence**: Remembers if "Mom" or "Dad" is logging so you don't have to switch every time
 - **Voice input**: Hands-free logging using your phone's built-in speech recognition
 - **Last feed status**: See at a glance how long it's been since the last feed
 - **Today's log**: View all feeds for the day in reverse chronological order
@@ -62,7 +64,7 @@ A dead-simple feed tracker designed for sleep-deprived parents. Big buttons, min
 
 ### Tracking Feeds
 
-1. **Bottle**: Tap 🍼 → Select amount (1-6 oz or custom) → Done
+1. **Bottle**: Tap 🍼 → Select Milk/Formula → Select amount (1-6 oz or custom) → Done
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
 4. **Voice**: Tap 🎤 → Say "Bottle 3 ounces" or "Nurse left 10 minutes" → Confirm
@@ -121,7 +123,7 @@ ipconfig
 
 1. **Bookmark to home screen**: On iOS, tap Share → Add to Home Screen. On Android, tap the menu → Add to Home Screen. This gives you a one-tap launch.
 
-2. **Use the "Who" toggle**: Switch between Mom/Dad at the top so you don't have to select it each time.
+2. **Use the "Who" toggle**: Switch between Mom/Dad at the top. The app remembers your choice!
 
 3. **Quick bottle logging**: The most common amounts (1-6 oz) are one tap away. For the first few weeks, you'll probably use 2-3 oz most often.
 
