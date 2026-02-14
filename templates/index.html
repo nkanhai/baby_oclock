@@ -2796,22 +2796,16 @@
                 const dayIndex = dates.indexOf(feed.date);
                 if (dayIndex === -1) return;
 
-                // Check notes/details for type
-                // The logical "type" in Excel is just "Diaper". 
-                // We need to parse the "notes" or "amount" or however it was stored.
-                // Let's check how diaper data is stored.
-                // Looking at past context/index.html:
-                // Diaper logging sends: type="Diaper", notes="Pee" | "Poop" | "Both"
-                // So we check feed.notes
+                // Check type field (e.g. "Diaper (Poop)", "Diaper (Pee)", "Diaper (Both)")
+                const type = (feed.type || '').toLowerCase();
 
-                const type = (feed.notes || '').toLowerCase();
-
-                if (type.includes('both') || (type.includes('pee') && type.includes('poop'))) {
+                if (type.includes('both')) {
                     data.both[dayIndex]++;
                 } else if (type.includes('poop')) {
                     data.poop[dayIndex]++;
                 } else {
                     // Default to pee if not specified, or if explicit 'pee'
+                    // "Diaper" generic also counts as Pee
                     data.pee[dayIndex]++;
                 }
             });
