@@ -503,10 +503,10 @@ def get_stats():
         if "Vitamin D" in feed["type"]:
             continue
 
-        total_feeds += 1
-
-        if feed["amount_ml"]:
-            total_ml += feed["amount_ml"]
+        if "Bottle" in feed["type"]:
+            total_feeds += 1
+            if feed["amount_ml"]:
+                total_ml += feed["amount_ml"]
 
         if "Nurse" in feed["type"]:
             nursing_sessions += 1

@@ -1926,7 +1926,9 @@
                 const groupsForGoal = groupFeedsByDate(data.feeds);
                 const todayFeeds = groupsForGoal[todayKey] || [];
                 todayFeeds.forEach(f => {
-                    if (f.amount_ml && !f.type.toLowerCase().includes('pump') && !f.type.includes('Vitamin D')) {
+                    // Only count Bottle feeds (Milk/Formula)
+                    // Exclude Pump, Nurse, Vitamin D
+                    if (f.amount_ml && f.type.includes('Bottle') && !f.type.includes('Vitamin D')) {
                         todayMl += f.amount_ml;
                     }
                 });
@@ -2587,6 +2589,9 @@
 
             feeds.forEach(feed => {
                 if (feed.type.includes('Diaper') || feed.type.includes('Vitamin')) return;
+
+                // Exclude Pump and Nurse - Only count Bottle feeds for intake
+                if (feed.type.includes('Pump') || feed.type.includes('Nurse')) return;
 
                 const typeLower = feed.type.toLowerCase();
                 const amount = feed.amount_ml || 0;
