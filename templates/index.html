@@ -1868,10 +1868,12 @@
                 }
 
                 // --- Next Feed Timer Logic ---
-                // Find most recent FEED (not diaper, not vitamin) to calc next feed time
+                // Find most recent FEED (not diaper, not vitamin, NOT Pump) to calc next feed time
                 let lastFeedObj = null;
                 for (const feed of data.feeds) {
-                    if (!feed.type.toLowerCase().includes('diaper') && !feed.type.includes('Vitamin D')) {
+                    const type = feed.type.toLowerCase();
+                    // Must be Bottle or Nurse (exclude Pump, Diaper, Vitamin)
+                    if (type.includes('bottle') || type.includes('nurse')) {
                         lastFeedObj = feed;
                         break;
                     }
@@ -1926,7 +1928,9 @@
                 const groupsForGoal = groupFeedsByDate(data.feeds);
                 const todayFeeds = groupsForGoal[todayKey] || [];
                 todayFeeds.forEach(f => {
-                    if (f.amount_ml && !f.type.toLowerCase().includes('pump') && !f.type.includes('Vitamin D')) {
+                    // Only count Bottle feeds (Milk/Formula)
+                    // Exclude Pump, Nurse, Vitamin D
+                    if (f.amount_ml && f.type.includes('Bottle') && !f.type.includes('Vitamin D')) {
                         todayMl += f.amount_ml;
                     }
                 });
@@ -2588,6 +2592,9 @@
             feeds.forEach(feed => {
                 if (feed.type.includes('Diaper') || feed.type.includes('Vitamin')) return;
 
+                // Exclude Pump and Nurse - Only count Bottle feeds for intake
+                if (feed.type.includes('Pump') || feed.type.includes('Nurse')) return;
+
                 const typeLower = feed.type.toLowerCase();
                 const amount = feed.amount_ml || 0;
 
@@ -2791,22 +2798,16 @@
                 const dayIndex = dates.indexOf(feed.date);
                 if (dayIndex === -1) return;
 
-                // Check notes/details for type
-                // The logical "type" in Excel is just "Diaper". 
-                // We need to parse the "notes" or "amount" or however it was stored.
-                // Let's check how diaper data is stored.
-                // Looking at past context/index.html:
-                // Diaper logging sends: type="Diaper", notes="Pee" | "Poop" | "Both"
-                // So we check feed.notes
+                // Check type field (e.g. "Diaper (Poop)", "Diaper (Pee)", "Diaper (Both)")
+                const type = (feed.type || '').toLowerCase();
 
-                const type = (feed.notes || '').toLowerCase();
-
-                if (type.includes('both') || (type.includes('pee') && type.includes('poop'))) {
+                if (type.includes('both')) {
                     data.both[dayIndex]++;
                 } else if (type.includes('poop')) {
                     data.poop[dayIndex]++;
                 } else {
                     // Default to pee if not specified, or if explicit 'pee'
+                    // "Diaper" generic also counts as Pee
                     data.pee[dayIndex]++;
                 }
             });

@@ -312,10 +312,10 @@ def get_feeds():
     total_feeds_today = 0
 
     if feeds:
-        # Find most recent actual feed (not Vitamin D)
+        # Find most recent actual feed (not Vitamin D, not Pump)
         last_feed = None
         for feed in feeds:
-            if "Vitamin D" not in feed["type"]:
+            if "Vitamin D" not in feed["type"] and "Pump" not in feed["type"]:
                 last_feed = feed
                 break
 
@@ -503,10 +503,10 @@ def get_stats():
         if "Vitamin D" in feed["type"]:
             continue
 
-        total_feeds += 1
-
-        if feed["amount_ml"]:
-            total_ml += feed["amount_ml"]
+        if "Bottle" in feed["type"]:
+            total_feeds += 1
+            if feed["amount_ml"]:
+                total_ml += feed["amount_ml"]
 
         if "Nurse" in feed["type"]:
             nursing_sessions += 1

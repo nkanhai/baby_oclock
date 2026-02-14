@@ -4,8 +4,9 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 
 ## Features
 
-- **Quick logging**: Log a bottle feed in seconds with the intuitive Tumbler UI (0-99 ml)
+- **Quick logging**: Log a bottle feed (Milk or Formula) in seconds with the intuitive Tumbler UI (0-99 ml)
 - **Manual Time Entry**: Edit timestamps for any log if you forgot to track it immediately
+- **Parent Persistence**: App remembers who logged last (Mom/Dad) for quicker entry
 - **Diaper tracking**: Log pee, poop, or both with 2 taps — see "last diaper change" timer on home screen
 - **Voice input**: Hands-free logging using your phone's built-in speech recognition (hidden behind feature flag)
 - **Last feed status**: See at a glance how long it's been since the last feed
@@ -72,7 +73,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 
 ### Tracking Feeds
 
-1. **Bottle**: Tap 🍼 → Select amount (ml) → Done
+1. **Bottle**: Tap 🍼 → Select Milk/Formula → Select amount (ml) → Done
 2. **Nursing**: Tap 🤱 → Select side (Left/Right/Both) → Done
 3. **Pumping**: Tap 💧 → Select side → Select amount → Done
 4. **Diaper**: Tap 🍑 → Select type (Pee/Poop/Both) → Done
@@ -97,7 +98,7 @@ All feeds are saved to `feeds.xlsx` in the project directory. The Excel file con
 |--------|-------------|
 | Date | Date of feed (YYYY-MM-DD) |
 | Time | Time of feed (12-hour format) |
-| Type | Feed (Bottle), Nurse (Left/Right/Both), Pump (Left/Right/Both), or Diaper (Pee/Poop/Both) |
+| Type | Feed (Bottle - Milk/Formula), Nurse (Left/Right/Both), Pump (Left/Right/Both), or Diaper (Pee/Poop/Both) |
 | Amount (ml) | Quantity in milliliters |
 | Duration (min) | Duration in minutes (optional) |
 | Notes | Free-text notes (optional) |

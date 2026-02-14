@@ -152,7 +152,12 @@ TypeError: can't subtract offset-naive and offset-aware datetimes
 ```python
 def format_feed_type(feed_type, side=None):
     if feed_type == "bottle":
-        return "Feed (Bottle)"
+        if side == "formula":
+            return "Feed (Bottle - Formula)"
+        elif side == "milk":
+             return "Feed (Bottle - Milk)"
+        else:
+            return "Feed (Bottle)"
     elif feed_type == "nurse":
         if side == "left":
             return "Nurse (Left)"
@@ -323,6 +328,8 @@ This bug was fixed in commit that reordered keyword checks.
 
 **Chart Types:**
 1. **Milk Intake:** Bar chart + Goal Line (500ml).
+   - **Metrics:** Sums only "Bottle" feeds (Milk + Formula). Excludes Pump and Nurse sessions to reflect baby's actual intake.
+   - **Stacking:** Stacks "Breast Milk" vs "Formula".
 2. **Diapers:** Stacked bar (Pee/Poop/Both).
 3. **Timeline:** Scatter plot.
    - **Y-Axis Logic:** Linear scale 0-24. 12am=0, 12pm=12, 11:59pm=23.9. Formatted via callback.
@@ -445,7 +452,8 @@ The app tracks diaper changes using the same infrastructure as feed tracking.
 
 **Excel Format:**
 - Stored as: `"Diaper (Pee)"`, `"Diaper (Poop)"`, `"Diaper (Both)"`
-- Uses the "side" parameter (repurposed from nurse/pump functionality)
+- Uses the "side" parameter to determine subtype.
+- **Chart Logic:** Aggregates by `type` field (e.g. checking for "Poop" string) to show stacked bars.
 
 **API:**
 ```json
