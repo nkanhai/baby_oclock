@@ -212,17 +212,31 @@
             transition: all 0.2s;
         }
 
-        .side-btn:active {
+        .side-btn:active,
+        .side-btn.selected {
             background: #E8877C;
             transform: scale(0.95);
+        }
+
+        .bottle-type-btn {
+            border-color: #4A90D9;
+        }
+
+        .bottle-type-btn:active,
+        .bottle-type-btn.selected {
+            background: #4A90D9 !important;
+            /* Force override side-btn active */
+            color: white;
         }
 
         .pump-side-btn {
             border-color: #5CB8B2;
         }
 
-        .pump-side-btn:active {
+        .pump-side-btn:active,
+        .pump-side-btn.selected {
             background: #5CB8B2;
+            color: white;
         }
 
         .custom-input-group {
