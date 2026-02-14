@@ -1055,7 +1055,8 @@
 
                 <div class="tumbler-wrapper">
                     <div class="modal-subtitle">Select Amount</div>
-                    <div class="tumbler-container">
+                    <!-- Tumbler Logic via JS -->
+                    <div class="tumbler-container" id="bottleTumbler">
                         <div class="tumbler-highlight"></div>
                         <div class="tumbler-column" id="bottleTens"></div>
                         <div class="tumbler-column" id="bottleOnes"></div>
@@ -1063,14 +1064,22 @@
                     </div>
                 </div>
 
+                <!-- Milk vs Formula Selection -->
+                <div class="side-selector">
+                    <button class="side-btn bottle-type-btn" data-type="milk"
+                        onclick="selectBottleType('milk')">Milk</button>
+                    <button class="side-btn bottle-type-btn" data-type="formula"
+                        onclick="selectBottleType('formula')">Formula</button>
+                </div>
+
+                <div class="custom-input-group">
+                    <label>Or type custom amount:</label>
+                    <input type="number" class="custom-input" id="bottleCustomMl" placeholder="Optional override">
+                </div>
+
                 <div class="expandable">
                     <button class="expandable-toggle" id="bottleMoreToggle">+ More options</button>
                     <div class="expandable-content" id="bottleMoreContent">
-                        <div class="custom-input-group">
-                            <label>Custom amount (ml)</label>
-                            <input type="number" class="custom-input" id="bottleCustomMl"
-                                placeholder="Optional override">
-                        </div>
                         <div class="custom-input-group">
                             <label>Duration (minutes)</label>
                             <input type="number" class="custom-input" id="bottleDuration" placeholder="Optional">
@@ -1265,10 +1274,11 @@
         };
 
         // State
-        let currentWho = 'Mom';
+        let currentWho = localStorage.getItem('currentWho') || 'Mom'; // Persist selection
         let lastCreatedFeedId = null;
         let editingFeedId = null;
         let pumpSelectedSide = null;
+        let bottleSelectedSide = null; // New for bottle type
         let voiceParsedData = null;
         let editingFeedDate = null; // Store the original date when editing
 
@@ -1309,7 +1319,23 @@
                 document.querySelectorAll('.who-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentWho = btn.dataset.who;
+                localStorage.setItem('currentWho', currentWho); // Save to localStorage
             });
+        });
+
+        // Initialize who toggle state from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedWho = localStorage.getItem('currentWho');
+            if (storedWho) {
+                document.querySelectorAll('.who-btn').forEach(btn => {
+                    if (btn.dataset.who === storedWho) {
+                        btn.classList.add('active');
+                        currentWho = storedWho;
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
         });
 
         // Expandable toggles
@@ -1338,10 +1364,26 @@
         });
 
         // Modal open/close
-        bottleBtn.addEventListener('click', () => openModal(bottleModal));
-        nurseBtn.addEventListener('click', () => openModal(nurseModal));
-        pumpBtn.addEventListener('click', () => openModal(pumpModal));
-        document.getElementById('diaperBtn').addEventListener('click', () => openModal(diaperModal));
+        bottleBtn.addEventListener('click', () => {
+            editingFeedId = null;
+            editingFeedDate = null;
+            openModal(bottleModal);
+        });
+        nurseBtn.addEventListener('click', () => {
+            editingFeedId = null;
+            editingFeedDate = null;
+            openModal(nurseModal);
+        });
+        pumpBtn.addEventListener('click', () => {
+            editingFeedId = null;
+            editingFeedDate = null;
+            openModal(pumpModal);
+        });
+        document.getElementById('diaperBtn').addEventListener('click', () => {
+            editingFeedId = null;
+            editingFeedDate = null;
+            openModal(diaperModal);
+        });
         voiceBtn.addEventListener('click', () => {
             if (FEATURE_FLAGS.VOICE_INPUT_ENABLED && recognition) {
                 openModal(voiceModal);
@@ -1358,28 +1400,38 @@
             closeModal(voiceModal);
         });
 
-        function openModal(modal) {
+        function openModal(modal, isEdit = false) {
             modal.classList.add('active');
+            // Reset logic moved to button handlers
 
-            // Set default time to now for new entries ONLY
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ':' +
-                now.getMinutes().toString().padStart(2, '0');
 
-            // Only update time inputs if we are NOT editing
-            const shouldUpdateTime = (editingFeedId === null);
-
-            // Reset forms
+            // Reset specific modal states
             if (modal === bottleModal) {
+                initTumblers();
+                // Reset bottle side selection
+                bottleSelectedSide = null;
+                document.querySelectorAll('.bottle-type-btn').forEach(btn => btn.classList.remove('selected'));
+                validateBottleForm(); // Check validation
+
+                // Clear fields
                 document.getElementById('bottleCustomMl').value = '';
                 document.getElementById('bottleDuration').value = '';
                 document.getElementById('bottleNotes').value = '';
-                if (shouldUpdateTime) document.getElementById('bottleTime').value = timeStr;
-                initTumblers();
+                document.getElementById('bottleSelect').textContent = 'Log Feed';
+
+                // Set time to now
+                const now = new Date();
+                document.getElementById('bottleTime').value =
+                    now.getHours().toString().padStart(2, '0') + ':' +
+                    now.getMinutes().toString().padStart(2, '0');
             } else if (modal === nurseModal) {
                 document.getElementById('nurseDuration').value = '';
                 document.getElementById('nurseNotes').value = '';
-                if (shouldUpdateTime) document.getElementById('nurseTime').value = timeStr;
+                const now = new Date();
+                document.getElementById('nurseTime').value =
+                    now.getHours().toString().padStart(2, '0') + ':' +
+                    now.getMinutes().toString().padStart(2, '0');
+                document.querySelectorAll('#nurseModal .side-btn').forEach(b => b.classList.remove('selected'));
             } else if (modal === pumpModal) {
                 pumpSelectedSide = null;
                 document.getElementById('pumpAmountSection').style.display = 'none';
@@ -1387,7 +1439,11 @@
                 document.getElementById('pumpCustomMl').value = '';
                 document.getElementById('pumpDuration').value = '';
                 document.getElementById('pumpNotes').value = '';
-                if (shouldUpdateTime) document.getElementById('pumpTime').value = timeStr;
+                const now = new Date();
+                document.getElementById('pumpTime').value =
+                    now.getHours().toString().padStart(2, '0') + ':' +
+                    now.getMinutes().toString().padStart(2, '0');
+                document.querySelectorAll('#pumpModal .side-btn').forEach(b => b.classList.remove('selected'));
             } else if (modal === voiceModal) {
                 document.getElementById('voiceTranscript').textContent = '';
                 document.getElementById('voiceParsedSection').style.display = 'none';
@@ -1395,7 +1451,11 @@
                 document.getElementById('voiceListening').style.display = 'block';
             } else if (modal === diaperModal) {
                 document.getElementById('diaperNotes').value = '';
-                if (shouldUpdateTime) document.getElementById('diaperTime').value = timeStr;
+                const now = new Date();
+                document.getElementById('diaperTime').value =
+                    now.getHours().toString().padStart(2, '0') + ':' +
+                    now.getMinutes().toString().padStart(2, '0');
+                document.querySelectorAll('#diaperModal .side-btn').forEach(b => b.classList.remove('selected'));
             }
         }
 
@@ -1424,7 +1484,7 @@
         document.getElementById('bottleSelect').addEventListener('click', () => {
             const customMl = parseFloat(document.getElementById('bottleCustomMl').value);
             const ml = customMl || getTumblerValue('bottle');
-            logFeed('bottle', null, ml);
+            logFeed('bottle', bottleSelectedSide, ml);
         });
 
         // Nurse side buttons
@@ -1676,6 +1736,8 @@
             let summary = '';
             if (type === 'bottle') {
                 summary = '🍼 Bottle';
+                if (side === 'formula') summary += ' (Formula)';
+                else if (side === 'milk') summary += ' (Milk)';
             } else if (type === 'nurse') {
                 summary = '🤱 Nurse';
                 if (side) summary += ` (${side})`;
@@ -1691,6 +1753,29 @@
             if (duration) summary += ` — ${duration} min`;
 
             return summary + ' logged';
+        }
+
+        // New functions for bottle selection
+        function selectBottleType(type) {
+            bottleSelectedSide = type;
+            document.querySelectorAll('.bottle-type-btn').forEach(btn => {
+                if (btn.dataset.type === type) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+            validateBottleForm();
+        }
+
+        function validateBottleForm() {
+            const selectBtn = document.getElementById('bottleSelect');
+            if (bottleSelectedSide) {
+                selectBtn.disabled = false;
+                selectBtn.style.opacity = '1';
+                selectBtn.textContent = editingFeedId ? 'Save Changes' : 'Log Feed';
+            } else {
+                selectBtn.disabled = true;
+                selectBtn.style.opacity = '0.5';
+                selectBtn.textContent = 'Select Milk or Formula';
+            }
         }
 
         // Toast
@@ -2032,7 +2117,11 @@
                 return `☀️ Vitamin D${administered}${who ? ' • ' + who : ''}`;
             }
 
-            let details = feed.type;
+            let details = feed.type
+                .replace('Feed (Bottle - Formula)', '🍼 Bottle (Formula)')
+                .replace('Feed (Bottle - Milk)', '🍼 Bottle (Milk)')
+                .replace('Feed (Bottle)', '🍼 Bottle'); // Old data fall back
+
             if (feed.amount_ml) details += ` • ${feed.amount_ml} ml`;
             if (feed.duration_min) details += ` • ${feed.duration_min} min`;
             if (feed.logged_by) details += ` • ${feed.logged_by}`;
@@ -2085,7 +2174,7 @@
 
             // Open modal and pre-fill
             if (type === 'bottle') {
-                openModal(bottleModal);
+                openModal(bottleModal, true);
                 // Set amount
                 if (feed.amount_ml) {
                     setTimeout(() => setTumblerValue('bottle', feed.amount_ml), 10);
@@ -2096,11 +2185,20 @@
                 if (feed.notes) document.getElementById('bottleNotes').value = feed.notes;
                 if (timeStr) document.getElementById('bottleTime').value = timeStr;
 
+                // Set type (Backward compatibility: if plain 'Feed (Bottle)', force selection)
+                if (originalType.includes('formula')) {
+                    selectBottleType('formula');
+                } else if (originalType.includes('milk')) {
+                    selectBottleType('milk');
+                } else {
+                    // Pre-select nothing, force user to choose to save
+                    validateBottleForm(); // Will disable button
+                }
+
                 // Change button to "Save Changes"
-                const selectBtn = document.getElementById('bottleSelect');
-                selectBtn.textContent = 'Save Changes';
+                // handled in validateBottleForm()
             } else if (type === 'nurse') {
-                openModal(nurseModal);
+                openModal(nurseModal, true);
                 // Set side selection
                 document.querySelectorAll('#nurseModal .side-btn').forEach(btn => {
                     if (btn.dataset.side === side) btn.classList.add('selected');
@@ -2127,7 +2225,7 @@
                 saveBtn.style.display = 'block';
 
             } else if (type === 'pump') {
-                openModal(pumpModal);
+                openModal(pumpModal, true);
                 // Set side
                 pumpSelectedSide = side;
                 document.querySelectorAll('#pumpModal .side-btn').forEach(btn => {
@@ -2155,7 +2253,7 @@
                 selectBtn.textContent = 'Save Changes';
 
             } else if (type === 'diaper') {
-                openModal(diaperModal);
+                openModal(diaperModal, true);
                 // Set type selection
                 document.querySelectorAll('#diaperModal .side-btn').forEach(btn => {
                     if (btn.dataset.type === side) btn.classList.add('selected');
@@ -2457,11 +2555,9 @@
             }
         }
 
-        // Aggregate feeds by date — returns { 'YYYY-MM-DD': totalMl, ... }
-        function aggregateMilkByDate(feeds, days) {
-            // Build list of date labels for the range
+        // Aggregate milk by type
+        function aggregateMilkByType(feeds, days) {
             const dates = [];
-            const today = new Date();
             for (let i = days - 1; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
@@ -2471,17 +2567,34 @@
                 dates.push(`${year}-${month}-${day}`);
             }
 
-            // Sum ml per date (exclude diapers and vitamins)
-            const totals = {};
-            dates.forEach(d => totals[d] = 0);
+            const breastMilk = {};
+            const formula = {};
+            dates.forEach(d => { breastMilk[d] = 0; formula[d] = 0; });
+
             feeds.forEach(feed => {
                 if (feed.type.includes('Diaper') || feed.type.includes('Vitamin')) return;
-                if (feed.amount_ml && feed.amount_ml <= 500 && totals.hasOwnProperty(feed.date)) {
-                    totals[feed.date] += feed.amount_ml;
+
+                const typeLower = feed.type.toLowerCase();
+                const amount = feed.amount_ml || 0;
+
+                if (amount > 0 && amount <= 800) { // Sane limit?
+                    if (dates.includes(feed.date)) {
+                        if (typeLower.includes('formula')) {
+                            formula[feed.date] += amount;
+                        } else {
+                            // "Milk" or "Breast Milk" or Unspecified all count as Breast Milk for now
+                            // This includes pumped milk and unspecified bottles
+                            breastMilk[feed.date] += amount;
+                        }
+                    }
                 }
             });
 
-            return { dates, totals };
+            return {
+                dates,
+                breastMilk: dates.map(d => breastMilk[d]),
+                formula: dates.map(d => formula[d])
+            };
         }
 
         // Format date label for chart axis
@@ -2514,9 +2627,13 @@
 
         // Render Daily Milk Intake bar chart
         function renderMilkChart(feeds, days) {
-            const { dates, totals } = aggregateMilkByDate(feeds, days);
+            // Updated to Stacked Bar Chart for Formula vs Breast Milk
+            const { dates, breastMilk, formula } = aggregateMilkByType(feeds, days);
             const labels = dates.map(formatChartLabel);
-            const values = dates.map(d => totals[d]);
+
+            // Unspecified feeds (backward compatibility) are grouped into Breast Milk for now, 
+            // or we could add a third dataset. Let's assume most historical is breast milk.
+            // If we want to be precise, we can check aggregateMilkByType implementation below.
 
             if (milkChartInstance) {
                 milkChartInstance.destroy();
@@ -2527,20 +2644,36 @@
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Milk (ml)',
-                        data: values,
-                        backgroundColor: values.map(v => v >= 500 ? '#9C87E8' : '#4A90D9'),
-                        borderRadius: 6,
-                        borderSkipped: false,
-                        maxBarThickness: 40
-                    }]
+                    datasets: [
+                        {
+                            label: 'Breast Milk',
+                            data: breastMilk,
+                            backgroundColor: '#4A90D9', // Blue
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            maxBarThickness: 40,
+                            stack: 'Stack 0'
+                        },
+                        {
+                            label: 'Formula',
+                            data: formula,
+                            backgroundColor: '#FFB86C', // Orange/Peach
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            maxBarThickness: 40,
+                            stack: 'Stack 0'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: { color: '#a8adb8', boxWidth: 12, padding: 10, font: { size: 11 } }
+                        },
                         tooltip: {
                             backgroundColor: '#252b3b',
                             titleColor: '#e8eaed',
@@ -2551,7 +2684,7 @@
                             padding: 10,
                             callbacks: {
                                 label: function (context) {
-                                    return context.parsed.y + ' ml';
+                                    return context.dataset.label + ': ' + context.parsed.y + ' ml';
                                 }
                             }
                         },
@@ -2560,6 +2693,7 @@
                     },
                     scales: {
                         x: {
+                            stacked: true,
                             ticks: {
                                 color: '#a8adb8',
                                 font: { size: 11 },
@@ -2569,6 +2703,7 @@
                             border: { display: false }
                         },
                         y: {
+                            stacked: true,
                             beginAtZero: true,
                             suggestedMax: 600,
                             ticks: {
@@ -2761,6 +2896,7 @@
         function renderTimelineChart(feeds, days) {
             // 1. Prepare datasets
             const bottleData = [];
+            const formulaData = []; // New formula dataset
             const nurseData = [];
             const pumpData = [];
 
@@ -2790,7 +2926,11 @@
                 const point = { x: feed.date, y: yVal };
 
                 if (feed.type.includes('Bottle')) {
-                    bottleData.push(point);
+                    if (feed.type.toLowerCase().includes('formula')) {
+                        formulaData.push(point);
+                    } else {
+                        bottleData.push(point); // Milk/Breast Milk (Default)
+                    }
                 } else if (feed.type.includes('Nurse')) {
                     nurseData.push(point);
                 } else if (feed.type.includes('Pump')) {
@@ -2807,9 +2947,16 @@
                     labels: dates, // X-axis categories
                     datasets: [
                         {
-                            label: 'Bottle',
+                            label: 'Breast Milk',
                             data: bottleData,
                             backgroundColor: '#4A90D9', // Blue
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Formula',
+                            data: formulaData,
+                            backgroundColor: '#FFB86C', // Orange/Peach
                             pointRadius: 6,
                             pointHoverRadius: 8
                         },
