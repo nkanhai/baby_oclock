@@ -2463,9 +2463,12 @@
             const dates = [];
             const today = new Date();
             for (let i = days - 1; i >= 0; i--) {
-                const d = new Date(today);
+                const d = new Date();
                 d.setDate(d.getDate() - i);
-                dates.push(d.toISOString().split('T')[0]);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                dates.push(`${year}-${month}-${day}`);
             }
 
             // Sum ml per date (exclude diapers and vitamins)
@@ -2482,14 +2485,26 @@
         }
 
         // Format date label for chart axis
-        function formatDateLabel(dateStr) {
-            const d = new Date(dateStr + 'T12:00:00');
+        function formatChartLabel(dateStr) {
+            const parts = dateStr.split('-');
+            const d = new Date(parts[0], parts[1] - 1, parts[2]); // Local time construction
             const today = new Date();
+
+            // Check if Today
+            if (d.getDate() === today.getDate() &&
+                d.getMonth() === today.getMonth() &&
+                d.getFullYear() === today.getFullYear()) {
+                return 'Today';
+            }
+
+            // Check if Yesterday
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
-
-            if (dateStr === today.toISOString().split('T')[0]) return 'Today';
-            if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yest.';
+            if (d.getDate() === yesterday.getDate() &&
+                d.getMonth() === yesterday.getMonth() &&
+                d.getFullYear() === yesterday.getFullYear()) {
+                return 'Yest.';
+            }
 
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -2500,7 +2515,7 @@
         // Render Daily Milk Intake bar chart
         function renderMilkChart(feeds, days) {
             const { dates, totals } = aggregateMilkByDate(feeds, days);
-            const labels = dates.map(formatDateLabel);
+            const labels = dates.map(formatChartLabel);
             const values = dates.map(d => totals[d]);
 
             if (milkChartInstance) {
@@ -2605,9 +2620,12 @@
             const dates = [];
             const today = new Date();
             for (let i = days - 1; i >= 0; i--) {
-                const d = new Date(today);
+                const d = new Date();
                 d.setDate(d.getDate() - i);
-                dates.push(d.toISOString().split('T')[0]);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                dates.push(`${year}-${month}-${day}`);
             }
 
             // Initialize counters
@@ -2650,7 +2668,7 @@
         // Render Diaper Stacked Bar Chart
         function renderDiaperChart(feeds, days) {
             const data = aggregateDiapersByDate(feeds, days);
-            const labels = data.dates.map(formatDateLabel);
+            const labels = data.dates.map(formatChartLabel);
 
             if (diaperChartInstance) {
                 diaperChartInstance.destroy();
@@ -2750,9 +2768,12 @@
             const dates = [];
             const today = new Date();
             for (let i = days - 1; i >= 0; i--) {
-                const d = new Date(today);
+                const d = new Date();
                 d.setDate(d.getDate() - i);
-                dates.push(d.toISOString().split('T')[0]);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                dates.push(`${year}-${month}-${day}`);
             }
 
             feeds.forEach(feed => {
