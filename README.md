@@ -17,7 +17,8 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 - **Today's log**: View all feeds for the day in reverse chronological order
 - **History**: View the last 7 days of feeds and diaper changes, grouped by Today, Yesterday, and date
 - **Charts**: Visualize daily milk intake, diaper changes, and feed timeline trends (7/14/30 days)
-- **Swipe navigation**: Swipe left/right on mobile to quickly switch between Tracker and Charts tabs
+- **Noise Monitor**: Real-time ambient sound level meter with pediatric-safe dB zones (stops automatically after 30s)
+- **Swipe navigation**: Swipe left/right on mobile to quickly switch between Tracker, Charts, and Noise tabs
 - **Excel export**: All data automatically saved to `feeds.xlsx` — open it in Excel, Google Sheets, or Numbers
 - **Mobile-optimized**: Big touch targets, dark mode, works great on phones
 - **Local network**: Access from any phone on your WiFi — no cloud, no accounts
@@ -30,6 +31,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 - **Charts**: Chart.js (via CDN)
 - **Data**: Excel `.xlsx` file via `openpyxl`
 - **Voice**: Browser Web Speech API (Safari/Chrome)
+- **Noise Monitor**: Web Audio API (client-side, no backend)
 
 ## Quick Start
 
@@ -119,6 +121,29 @@ The app includes a dedicated **Charts** tab to visualize trends:
 
 Tap the "7d", "14d", or "30d" buttons to change the date range.
 
+## Noise Monitoring
+
+The **Noise** tab provides real-time ambient sound monitoring to help ensure a safe nursery environment:
+
+- **Live dB meter**: Displays current sound level with color-coded zones
+- **Pediatric-safe zones**:
+  - 🟢 **30-45 dB**: Ideal for sleep
+  - 🟢 **45-50 dB**: Acceptable (NICU standard)
+  - 🟡 **50-60 dB**: Caution (CDC upper limit)
+  - 🔴 **60-70 dB**: Reduce noise
+  - 🔴 **70+ dB**: Too loud — immediate action needed
+- **Auto-stop**: Monitoring automatically stops after 30 seconds to conserve battery
+- **Privacy-first**: All audio processing happens on your device — nothing is recorded or transmitted
+
+**To use:**
+1. Navigate to the Noise tab
+2. Tap "Start Monitoring" and accept microphone permission
+3. Place phone near baby's sleep area
+4. Watch the meter and zone indicator
+5. Monitoring stops automatically after 30s, or tap "Stop" to end early
+
+**Note**: Phone microphones are not calibrated instruments. Readings are approximate and should be used as a relative guide only.
+
 ## Network Access
 
 The app binds to `0.0.0.0:8080` so it's accessible on your local network. Both parents can access it from their phones as long as they're on the same WiFi.
@@ -161,6 +186,9 @@ ipconfig
 
 **Q: Voice button doesn't appear**
 A: Voice input is currently disabled by default behind a feature flag. To enable it, set `FEATURE_FLAGS.VOICE_INPUT_ENABLED = true` in the `<script>` section of `templates/index.html`. Voice input requires Safari (iOS) or Chrome (Android).
+
+**Q: Noise tab doesn't appear**
+A: Noise monitoring is enabled by default. If you don't see the Noise tab, check that `FEATURE_FLAGS.NOISE_MONITOR_ENABLED = true` in the `<script>` section of `templates/index.html`. The Noise Monitor requires Safari (iOS) or Chrome for microphone access.
 
 **Q: Can't access from phone**
 A: Make sure both your computer and phone are on the same WiFi network. Check your firewall settings — port 8080 needs to be open.
