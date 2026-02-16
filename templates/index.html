@@ -2896,7 +2896,7 @@
             }
         }
 
-        // Aggregate milk by type
+        // Aggregate milk by type - preserves individual entries for segmented charts
         function aggregateMilkByType(feeds, days) {
             const dates = [];
             for (let i = days - 1; i >= 0; i--) {
@@ -2908,10 +2908,15 @@
                 dates.push(`${year}-${month}-${day}`);
             }
 
-            const breastMilk = {};
-            const formula = {};
-            dates.forEach(d => { breastMilk[d] = 0; formula[d] = 0; });
+            // Initialize entry arrays for each date
+            const breastMilkEntries = {};
+            const formulaEntries = {};
+            dates.forEach(d => {
+                breastMilkEntries[d] = [];
+                formulaEntries[d] = [];
+            });
 
+            // Collect individual feed entries
             feeds.forEach(feed => {
                 if (feed.type.includes('Diaper') || feed.type.includes('Vitamin')) return;
 
@@ -2923,21 +2928,37 @@
 
                 if (amount > 0 && amount <= 800) { // Sane limit?
                     if (dates.includes(feed.date)) {
+                        const entry = {
+                            amount: amount,
+                            time: feed.time,
+                            timestamp: feed.timestamp,
+                            feedId: feed.id
+                        };
+
                         if (typeLower.includes('formula')) {
-                            formula[feed.date] += amount;
+                            formulaEntries[feed.date].push(entry);
                         } else {
                             // "Milk" or "Breast Milk" or Unspecified all count as Breast Milk for now
-                            // This includes pumped milk and unspecified bottles
-                            breastMilk[feed.date] += amount;
+                            breastMilkEntries[feed.date].push(entry);
                         }
                     }
                 }
             });
 
+            // Sort entries within each day by time (chronological order)
+            dates.forEach(date => {
+                breastMilkEntries[date].sort((a, b) => {
+                    return new Date(a.timestamp) - new Date(b.timestamp);
+                });
+                formulaEntries[date].sort((a, b) => {
+                    return new Date(a.timestamp) - new Date(b.timestamp);
+                });
+            });
+
             return {
                 dates,
-                breastMilk: dates.map(d => breastMilk[d]),
-                formula: dates.map(d => formula[d])
+                breastMilkEntries,
+                formulaEntries
             };
         }
 
@@ -2969,45 +2990,101 @@
             return days[d.getDay()] + ' ' + d.getDate();
         }
 
-        // Render Daily Milk Intake bar chart
-        function renderMilkChart(feeds, days) {
-            // Updated to Stacked Bar Chart for Formula vs Breast Milk
-            const { dates, breastMilk, formula } = aggregateMilkByType(feeds, days);
-            const labels = dates.map(formatChartLabel);
+        // Helper: Convert 24-hour time string to 12-hour format with AM/PM
+        function formatTime12Hour(timeStr) {
+            if (!timeStr) return '';
 
-            // Unspecified feeds (backward compatibility) are grouped into Breast Milk for now, 
-            // or we could add a third dataset. Let's assume most historical is breast milk.
-            // If we want to be precise, we can check aggregateMilkByType implementation below.
+            // Handle "HH:MM AM/PM" format (already 12-hour)
+            if (timeStr.includes('AM') || timeStr.includes('PM')) {
+                return timeStr;
+            }
+
+            // Parse "HH:MM" format (24-hour)
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return timeStr;
+
+            const hours = parseInt(parts[0], 10);
+            const minutes = parts[1];
+
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+
+            return `${displayHours}:${minutes} ${period}`;
+        }
+
+        // Helper: Generate Chart.js datasets from segmented entries
+        function generateSegmentedDatasets(dates, entries, baseColor, label) {
+            const datasets = [];
+
+            // For each date, create datasets for each entry
+            dates.forEach((date, dateIndex) => {
+                const dayEntries = entries[date] || [];
+
+                dayEntries.forEach((entry, entryIndex) => {
+                    // Create array with zeros except for this specific date
+                    const data = new Array(dates.length).fill(0);
+                    data[dateIndex] = entry.amount;
+
+                    datasets.push({
+                        label: label, // All share same label for legend
+                        data: data,
+                        backgroundColor: baseColor,
+                        borderColor: '#1e2430', // Dark border for separation
+                        borderWidth: 1, // Thin border between segments
+                        borderSkipped: false,
+                        borderRadius: entryIndex === dayEntries.length - 1 ? 6 : 0, // Only round top segment
+                        maxBarThickness: 40,
+                        stack: 'Stack 0',
+                        // Store metadata for tooltip
+                        entryTime: entry.time,
+                        entryAmount: entry.amount,
+                        entryId: entry.feedId,
+                        entryIndex: entryIndex,
+                        totalEntries: dayEntries.length
+                    });
+                });
+            });
+
+            return datasets;
+        }
+
+        // Render Daily Milk Intake bar chart - with segmented entries
+        function renderMilkChart(feeds, days) {
+            const { dates, breastMilkEntries, formulaEntries } = aggregateMilkByType(feeds, days);
+            const labels = dates.map(formatChartLabel);
 
             if (milkChartInstance) {
                 milkChartInstance.destroy();
             }
 
+            // Generate datasets for each individual entry
+            const breastMilkDatasets = generateSegmentedDatasets(
+                dates,
+                breastMilkEntries,
+                '#4A90D9', // Blue
+                'Breast Milk'
+            );
+
+            const formulaDatasets = generateSegmentedDatasets(
+                dates,
+                formulaEntries,
+                '#FFB86C', // Orange/Peach
+                'Formula'
+            );
+
+            // Combine all datasets
+            const allDatasets = [...breastMilkDatasets, ...formulaDatasets];
+
             const ctx = document.getElementById('milkChart').getContext('2d');
+
+            // Use a Set to track seen labels for deduplication
+            const seenLabels = new Set();
+
             milkChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: 'Breast Milk',
-                            data: breastMilk,
-                            backgroundColor: '#4A90D9', // Blue
-                            borderRadius: 6,
-                            borderSkipped: false,
-                            maxBarThickness: 40,
-                            stack: 'Stack 0'
-                        },
-                        {
-                            label: 'Formula',
-                            data: formula,
-                            backgroundColor: '#FFB86C', // Orange/Peach
-                            borderRadius: 6,
-                            borderSkipped: false,
-                            maxBarThickness: 40,
-                            stack: 'Stack 0'
-                        }
-                    ]
+                    datasets: allDatasets
                 },
                 options: {
                     responsive: true,
@@ -3016,7 +3093,20 @@
                         legend: {
                             display: true,
                             position: 'bottom',
-                            labels: { color: '#a8adb8', boxWidth: 12, padding: 10, font: { size: 11 } }
+                            labels: {
+                                color: '#a8adb8',
+                                boxWidth: 12,
+                                padding: 10,
+                                font: { size: 11 },
+                                // Filter to show only unique labels
+                                filter: function(item) {
+                                    if (seenLabels.has(item.text)) {
+                                        return false;
+                                    }
+                                    seenLabels.add(item.text);
+                                    return true;
+                                }
+                            }
                         },
                         tooltip: {
                             backgroundColor: '#252b3b',
@@ -3027,12 +3117,21 @@
                             cornerRadius: 8,
                             padding: 10,
                             callbacks: {
-                                label: function (context) {
-                                    return context.dataset.label + ': ' + context.parsed.y + ' ml';
+                                title: function(context) {
+                                    // Show date label
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const dataset = context.dataset;
+                                    if (!dataset.entryTime) return '';
+
+                                    // Format time as 12-hour with AM/PM
+                                    const timeFormatted = formatTime12Hour(dataset.entryTime);
+
+                                    return `${timeFormatted}: ${dataset.entryAmount} ml`;
                                 }
                             }
                         },
-                        // Goal line annotation (using a simple plugin)
                         annotation: undefined
                     },
                     scales: {
@@ -3230,7 +3329,7 @@
             });
         }
 
-        // Aggregate Pump Amount by date
+        // Aggregate Pump Amount by date - preserves individual entries for segmented charts
         function aggregatePumpByDate(feeds, days) {
             const dates = [];
             for (let i = days - 1; i >= 0; i--) {
@@ -3242,7 +3341,9 @@
                 dates.push(`${year}-${month}-${day}`);
             }
 
-            const amounts = dates.map(() => 0);
+            // Initialize entry arrays for each date
+            const pumpEntries = {};
+            dates.forEach(d => { pumpEntries[d] = []; });
 
             feeds.forEach(feed => {
                 if (!feed.type.includes('Pump')) return;
@@ -3251,35 +3352,48 @@
                 if (dayIndex === -1) return;
 
                 if (feed.amount_ml) {
-                    amounts[dayIndex] += feed.amount_ml;
+                    pumpEntries[feed.date].push({
+                        amount: feed.amount_ml,
+                        time: feed.time,
+                        timestamp: feed.timestamp,
+                        feedId: feed.id
+                    });
                 }
             });
 
-            return { dates, amounts };
+            // Sort entries by time chronologically
+            dates.forEach(date => {
+                pumpEntries[date].sort((a, b) => {
+                    return new Date(a.timestamp) - new Date(b.timestamp);
+                });
+            });
+
+            return { dates, pumpEntries };
         }
 
-        // Render Pump Amount Chart
+        // Render Pump Amount Chart - with segmented entries
         function renderPumpChart(feeds, days) {
-            const { dates, amounts } = aggregatePumpByDate(feeds, days);
+            const { dates, pumpEntries } = aggregatePumpByDate(feeds, days);
             const labels = dates.map(formatChartLabel);
 
             if (pumpChartInstance) {
                 pumpChartInstance.destroy();
             }
 
+            // Generate datasets for each individual pump entry
+            const pumpDatasets = generateSegmentedDatasets(
+                dates,
+                pumpEntries,
+                '#5CB8B2', // Teal
+                'Pumped Output'
+            );
+
             const ctx = document.getElementById('pumpChart').getContext('2d');
             pumpChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Pumped Output',
-                        data: amounts,
-                        backgroundColor: '#5CB8B2', // Teal
-                        borderRadius: 6,
-                        borderSkipped: false,
-                        maxBarThickness: 40
-                    }]
+                    datasets: pumpDatasets
                 },
                 options: {
                     responsive: true,
@@ -3297,14 +3411,25 @@
                             cornerRadius: 8,
                             padding: 10,
                             callbacks: {
-                                label: function (context) {
-                                    return context.parsed.y + ' ml';
+                                title: function(context) {
+                                    // Show date label
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const dataset = context.dataset;
+                                    if (!dataset.entryTime) return '';
+
+                                    // Format time as 12-hour with AM/PM
+                                    const timeFormatted = formatTime12Hour(dataset.entryTime);
+
+                                    return `${timeFormatted}: ${dataset.entryAmount} ml`;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
+                            stacked: true, // Enable stacking for segments
                             ticks: {
                                 color: '#a8adb8',
                                 font: { size: 11 },
@@ -3314,6 +3439,7 @@
                             border: { display: false }
                         },
                         y: {
+                            stacked: true, // Enable stacking for segments
                             beginAtZero: true,
                             ticks: {
                                 color: '#a8adb8',
