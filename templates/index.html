@@ -3053,10 +3053,6 @@
             const { dates, breastMilkEntries, formulaEntries } = aggregateMilkByType(feeds, days);
             const labels = dates.map(formatChartLabel);
 
-            console.log('Milk Chart - dates:', dates);
-            console.log('Milk Chart - breastMilkEntries:', breastMilkEntries);
-            console.log('Milk Chart - formulaEntries:', formulaEntries);
-
             if (milkChartInstance) {
                 milkChartInstance.destroy();
             }
@@ -3078,7 +3074,6 @@
 
             // Combine all datasets
             const allDatasets = [...breastMilkDatasets, ...formulaDatasets];
-            console.log('Milk Chart - Total datasets:', allDatasets.length);
 
             const ctx = document.getElementById('milkChart').getContext('2d');
 
