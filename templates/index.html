@@ -978,6 +978,181 @@
             color: #a8adb8;
             font-size: 15px;
         }
+
+        /* Noise Monitor */
+        .noise-card {
+            background: #252b3b;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .noise-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #e8eaed;
+        }
+
+        .noise-db-display {
+            margin-bottom: 8px;
+        }
+
+        .noise-db-value {
+            font-size: 72px;
+            font-weight: 700;
+            color: #e8eaed;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+
+        .noise-db-unit {
+            font-size: 24px;
+            color: #a8adb8;
+            margin-left: 4px;
+            vertical-align: super;
+        }
+
+        .noise-zone-label {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #a8adb8;
+            transition: color 0.3s;
+            min-height: 28px;
+        }
+
+        .noise-meter-container {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 12px;
+            height: 240px;
+            margin-bottom: 24px;
+        }
+
+        .noise-meter-track {
+            width: 60px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .noise-zone {
+            flex: 1;
+        }
+
+        .noise-zone-ideal {
+            background: #4CAF50;
+            opacity: 0.25;
+        }
+
+        .noise-zone-acceptable {
+            background: #8BC34A;
+            opacity: 0.25;
+        }
+
+        .noise-zone-caution {
+            background: #FFC107;
+            opacity: 0.25;
+        }
+
+        .noise-zone-danger {
+            background: #FF5722;
+            opacity: 0.25;
+        }
+
+        .noise-zone-critical {
+            background: #D32F2F;
+            opacity: 0.25;
+        }
+
+        .noise-meter-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0%;
+            border-radius: 0 0 12px 12px;
+            transition: height 0.1s linear, background-color 0.3s;
+            background: #4CAF50;
+        }
+
+        .noise-meter-labels {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #a8adb8;
+            padding: 2px 0;
+        }
+
+        .noise-legend {
+            text-align: left;
+            margin-bottom: 24px;
+            padding: 0 8px;
+        }
+
+        .noise-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #a8adb8;
+        }
+
+        .noise-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .noise-toggle-btn {
+            background: #2d3548;
+            border: 2px solid #4CAF50;
+            border-radius: 16px;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #e8eaed;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            -webkit-tap-highlight-color: transparent;
+            width: 100%;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .noise-toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        .noise-toggle-btn.active {
+            border-color: #FF5722;
+            background: rgba(255, 87, 34, 0.15);
+        }
+
+        .noise-status {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #FF5722;
+            min-height: 20px;
+        }
+
+        .noise-disclaimer {
+            margin-top: 16px;
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+            font-style: italic;
+        }
     </style>
 </head>
 
@@ -992,6 +1167,7 @@
     <div class="tab-bar" id="tabBar">
         <button class="tab-btn active" data-tab="tracker">Tracker</button>
         <button class="tab-btn" data-tab="charts">📈 Charts</button>
+        <button class="tab-btn" data-tab="noise" id="noiseTabBtn" style="display: none;">🔇 Noise</button>
     </div>
 
     <!-- Tracker View -->
@@ -1285,10 +1461,77 @@
         </div>
     </div>
 
+    <!-- Noise Monitor View -->
+    <div id="noiseView" style="display: none;">
+        <div class="noise-card">
+            <h3 class="noise-title">Nursery Noise Monitor</h3>
+
+            <div class="noise-db-display">
+                <span class="noise-db-value" id="noiseDbValue">--</span>
+                <span class="noise-db-unit">dB</span>
+            </div>
+
+            <div class="noise-zone-label" id="noiseZoneLabel">Tap Start to begin</div>
+
+            <div class="noise-meter-container">
+                <div class="noise-meter-track">
+                    <div class="noise-zone noise-zone-ideal"></div>
+                    <div class="noise-zone noise-zone-acceptable"></div>
+                    <div class="noise-zone noise-zone-caution"></div>
+                    <div class="noise-zone noise-zone-danger"></div>
+                    <div class="noise-zone noise-zone-critical"></div>
+                    <div class="noise-meter-fill" id="noiseMeterFill"></div>
+                </div>
+                <div class="noise-meter-labels">
+                    <span>70+</span>
+                    <span>60</span>
+                    <span>50</span>
+                    <span>45</span>
+                    <span>30</span>
+                </div>
+            </div>
+
+            <div class="noise-legend">
+                <div class="noise-legend-item">
+                    <span class="noise-legend-dot" style="background: #4CAF50;"></span>
+                    <span>30-45 dB — Ideal for sleep</span>
+                </div>
+                <div class="noise-legend-item">
+                    <span class="noise-legend-dot" style="background: #8BC34A;"></span>
+                    <span>45-50 dB — Acceptable</span>
+                </div>
+                <div class="noise-legend-item">
+                    <span class="noise-legend-dot" style="background: #FFC107;"></span>
+                    <span>50-60 dB — Caution</span>
+                </div>
+                <div class="noise-legend-item">
+                    <span class="noise-legend-dot" style="background: #FF5722;"></span>
+                    <span>60-70 dB — Reduce noise</span>
+                </div>
+                <div class="noise-legend-item">
+                    <span class="noise-legend-dot" style="background: #D32F2F;"></span>
+                    <span>70+ dB — Too loud!</span>
+                </div>
+            </div>
+
+            <button class="noise-toggle-btn" id="noiseToggleBtn" onclick="toggleNoiseMonitor()">
+                <span id="noiseToggleIcon">🎙️</span>
+                <span id="noiseToggleText">Start Monitoring</span>
+            </button>
+
+            <div class="noise-status" id="noiseStatus"></div>
+
+            <div class="noise-disclaimer">
+                Readings are approximate. Phone microphones are not calibrated instruments. Place phone near baby's sleep area for best results.
+            </div>
+        </div>
+    </div>
+
     <script>
         // Feature Flags
         const FEATURE_FLAGS = {
-            VOICE_INPUT_ENABLED: false  // Set to true to enable voice functionality
+            VOICE_INPUT_ENABLED: false,  // Set to true to enable voice functionality
+            NOISE_MONITOR_ENABLED: true  // Set to true to enable noise monitor tab
         };
 
         // State
@@ -2555,26 +2798,23 @@
         let timelineChartInstance = null;
 
         // Tab switching
-        // Tab switching function
         function switchTab(tab) {
-            // Update buttons
+            // Update button active states
             document.querySelectorAll('.tab-btn').forEach(b => {
                 b.classList.remove('active');
                 if (b.dataset.tab === tab) b.classList.add('active');
             });
 
-            // Update views
-            const trackerView = document.getElementById('trackerView');
-            const chartsView = document.getElementById('chartsView');
+            // Hide all views, show selected
+            const views = { tracker: 'trackerView', charts: 'chartsView', noise: 'noiseView' };
+            Object.entries(views).forEach(([key, id]) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = (key === tab) ? '' : 'none';
+            });
 
-            if (tab === 'tracker') {
-                trackerView.style.display = '';
-                chartsView.style.display = 'none';
-            } else {
-                trackerView.style.display = 'none';
-                chartsView.style.display = '';
-                loadChartData(currentChartRange);
-            }
+            // Tab-specific hooks
+            if (tab === 'charts') loadChartData(currentChartRange);
+            if (tab !== 'noise' && noiseMonitorActive) stopNoiseMonitor();
         }
 
         // Click listeners
@@ -2603,18 +2843,22 @@
 
             // Threshold: 50px, Horizontal > Vertical
             if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-                const currentBtn = document.querySelector('.tab-btn.active');
-                if (!currentBtn) return;
+                // Build ordered tab list from visible tab buttons
+                const tabOrder = Array.from(document.querySelectorAll('.tab-btn'))
+                    .filter(b => b.style.display !== 'none')
+                    .map(b => b.dataset.tab);
 
-                const currentTab = currentBtn.dataset.tab;
+                const current = document.querySelector('.tab-btn.active')?.dataset.tab;
+                const idx = tabOrder.indexOf(current);
+                if (idx === -1) return;
 
-                // Swipe Left (Go to Charts)
-                if (diffX < 0 && currentTab === 'tracker') {
-                    switchTab('charts');
+                // Swipe Left → next tab
+                if (diffX < 0 && idx < tabOrder.length - 1) {
+                    switchTab(tabOrder[idx + 1]);
                 }
-                // Swipe Right (Go to Tracker)
-                else if (diffX > 0 && currentTab === 'charts') {
-                    switchTab('tracker');
+                // Swipe Right → previous tab
+                else if (diffX > 0 && idx > 0) {
+                    switchTab(tabOrder[idx - 1]);
                 }
             }
         }
@@ -3239,8 +3483,180 @@
             });
         }
 
+        // ==========================================
+        // NOISE MONITOR FUNCTIONALITY
+        // ==========================================
+
+        let noiseMonitorActive = false;
+        let noiseAudioContext = null;
+        let noiseAnalyser = null;
+        let noiseMediaStream = null;
+        let noiseAnimationId = null;
+        let noiseTimerId = null;
+
+        const NOISE_ZONES = [
+            { min: 0,  max: 45, label: 'Safe for sleep',       color: '#4CAF50' },
+            { min: 45, max: 50, label: 'Acceptable',            color: '#8BC34A' },
+            { min: 50, max: 60, label: 'Getting loud',          color: '#FFC107' },
+            { min: 60, max: 70, label: 'Too loud for baby!',    color: '#FF5722' },
+            { min: 70, max: 120, label: 'Danger — reduce now!', color: '#D32F2F' }
+        ];
+
+        function getNoiseZone(db) {
+            for (const zone of NOISE_ZONES) {
+                if (db >= zone.min && db < zone.max) return zone;
+            }
+            return NOISE_ZONES[NOISE_ZONES.length - 1];
+        }
+
+        async function startNoiseMonitor() {
+            const statusEl = document.getElementById('noiseStatus');
+            const toggleBtn = document.getElementById('noiseToggleBtn');
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                statusEl.textContent = 'Your browser does not support microphone access. Try Safari or Chrome.';
+                return;
+            }
+
+            try {
+                statusEl.textContent = '';
+
+                noiseMediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    }
+                });
+
+                noiseAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                if (noiseAudioContext.state === 'suspended') {
+                    await noiseAudioContext.resume();
+                }
+
+                const source = noiseAudioContext.createMediaStreamSource(noiseMediaStream);
+                noiseAnalyser = noiseAudioContext.createAnalyser();
+                noiseAnalyser.fftSize = 2048;
+                noiseAnalyser.smoothingTimeConstant = 0.8;
+                source.connect(noiseAnalyser);
+
+                noiseMonitorActive = true;
+                toggleBtn.classList.add('active');
+                document.getElementById('noiseToggleIcon').textContent = '⏹️';
+                document.getElementById('noiseToggleText').textContent = 'Stop Monitoring';
+
+                updateNoiseMeter();
+
+                // Auto-stop after 30 seconds
+                if (noiseTimerId) clearTimeout(noiseTimerId);
+                noiseTimerId = setTimeout(() => stopNoiseMonitor(), 30000);
+
+            } catch (err) {
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    statusEl.textContent = 'Microphone permission denied. Check your browser settings to allow access.';
+                } else if (err.name === 'NotFoundError') {
+                    statusEl.textContent = 'No microphone found on this device.';
+                } else {
+                    statusEl.textContent = 'Could not access microphone: ' + err.message;
+                }
+            }
+        }
+
+        function stopNoiseMonitor() {
+            noiseMonitorActive = false;
+
+            if (noiseTimerId) {
+                clearTimeout(noiseTimerId);
+                noiseTimerId = null;
+            }
+
+            if (noiseAnimationId) {
+                cancelAnimationFrame(noiseAnimationId);
+                noiseAnimationId = null;
+            }
+
+            if (noiseAudioContext) {
+                noiseAudioContext.close();
+                noiseAudioContext = null;
+                noiseAnalyser = null;
+            }
+
+            if (noiseMediaStream) {
+                noiseMediaStream.getTracks().forEach(track => track.stop());
+                noiseMediaStream = null;
+            }
+
+            const toggleBtn = document.getElementById('noiseToggleBtn');
+            toggleBtn.classList.remove('active');
+            document.getElementById('noiseToggleIcon').textContent = '🎙️';
+            document.getElementById('noiseToggleText').textContent = 'Start Monitoring';
+            document.getElementById('noiseDbValue').textContent = '--';
+            document.getElementById('noiseDbValue').style.color = '#e8eaed';
+            document.getElementById('noiseZoneLabel').textContent = 'Tap Start to begin';
+            document.getElementById('noiseZoneLabel').style.color = '#a8adb8';
+            document.getElementById('noiseMeterFill').style.height = '0%';
+            document.getElementById('noiseMeterFill').style.backgroundColor = '#4CAF50';
+            document.getElementById('noiseStatus').textContent = '';
+        }
+
+        function toggleNoiseMonitor() {
+            if (noiseMonitorActive) {
+                stopNoiseMonitor();
+            } else {
+                startNoiseMonitor();
+            }
+        }
+
+        function updateNoiseMeter() {
+            if (!noiseMonitorActive || !noiseAnalyser) return;
+
+            const bufferLength = noiseAnalyser.fftSize;
+            const dataArray = new Float32Array(bufferLength);
+            noiseAnalyser.getFloatTimeDomainData(dataArray);
+
+            let sumSquares = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sumSquares += dataArray[i] * dataArray[i];
+            }
+            const rms = Math.sqrt(sumSquares / bufferLength);
+
+            const DB_OFFSET = 94;
+            let db = 20 * Math.log10(Math.max(rms, 1e-10)) + DB_OFFSET;
+            db = Math.max(20, Math.min(100, db));
+
+            const displayDb = Math.round(db);
+            const zone = getNoiseZone(db);
+
+            document.getElementById('noiseDbValue').textContent = displayDb;
+            document.getElementById('noiseDbValue').style.color = zone.color;
+
+            document.getElementById('noiseZoneLabel').textContent = zone.label;
+            document.getElementById('noiseZoneLabel').style.color = zone.color;
+
+            // Meter fill: 30 dB = 0%, 80 dB = 100%
+            const meterPercent = Math.max(0, Math.min(100, ((db - 30) / 50) * 100));
+            const fillEl = document.getElementById('noiseMeterFill');
+            fillEl.style.height = meterPercent + '%';
+            fillEl.style.backgroundColor = zone.color;
+
+            noiseAnimationId = requestAnimationFrame(updateNoiseMeter);
+        }
+
+        // Stop noise monitor when page is hidden (battery saving)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && noiseMonitorActive) {
+                stopNoiseMonitor();
+            }
+        });
+
         // Initial load
         loadFeeds();
+
+        // Show noise tab if feature flag enabled
+        if (FEATURE_FLAGS.NOISE_MONITOR_ENABLED) {
+            document.getElementById('noiseTabBtn').style.display = '';
+        }
     </script>
 </body>
 
