@@ -19,6 +19,7 @@ This is a **mobile-first web application** for tracking baby feeding sessions (b
 | **Frontend** | Single HTML file with inline CSS/JS | No build step, works offline after first load |
 | **Voice Input** | Browser Web Speech API | Built into Safari/Chrome, no API keys needed |
 | **Charts** | Chart.js (v4 CDN) | Lightweight, mobile-friendly canvas rendering |
+| **Noise Monitor** | Web Audio API | Client-side ambient sound metering, no recording |
 | **Server** | Development server on port 8080 | Runs on local network, no internet required |
 
 **Key Design Decision:** Everything is intentionally simple and self-contained. No databases, no frameworks, no cloud services.
@@ -343,6 +344,86 @@ This bug was fixed in commit that reordered keyword checks.
 - Charts are re-rendered on tab switch or range change (7/14/30 days).
 - Uses `destroy()` on chart instances before re-creating to prevent canvas reuse errors.
 
+### 12. Noise Monitor (Feb 2026)
+
+**Architecture:**
+- **Client-Side Only:** All audio processing happens in the browser via Web Audio API. No backend changes.
+- **No Recording:** Audio data is analyzed in real-time and discarded — nothing is saved or transmitted.
+- **Feature-Flagged:** `FEATURE_FLAGS.NOISE_MONITOR_ENABLED` (enabled by default).
+
+**Audio Pipeline:**
+```
+getUserMedia (mic) → AudioContext → MediaStreamSource → AnalyserNode →
+getFloatTimeDomainData → RMS calculation → dB conversion → UI update via requestAnimationFrame
+```
+
+**Configuration:**
+- **fftSize:** 2048 (provides good time resolution for ambient noise)
+- **smoothingTimeConstant:** 0.8 (80% temporal smoothing to reduce meter jitter)
+- **Audio Settings:** `echoCancellation: false`, `noiseSuppression: false`, `autoGainControl: false` (to get raw levels)
+- **dB Offset:** +94 (standard approximation for converting dBFS to dB SPL for uncalibrated mics)
+
+**Pediatric dB Zones:**
+| Range | Label | Color | Source |
+|-------|-------|-------|--------|
+| 0-45 dB | Safe for sleep | Green (#4CAF50) | Quiet nursery standard |
+| 45-50 dB | Acceptable | Lime (#8BC34A) | NICU limit |
+| 50-60 dB | Getting loud | Yellow (#FFC107) | CDC upper limit for infants |
+| 60-70 dB | Too loud for baby! | Orange (#FF5722) | Hearing damage risk zone |
+| 70+ dB | Danger — reduce now! | Red (#D32F2F) | Exceeds safety threshold |
+
+**Auto-Stop Timer:**
+- Monitoring automatically stops after **30 seconds** to conserve battery and mic resources.
+- Timer is set via `setTimeout()` in `startNoiseMonitor()` and cleared in `stopNoiseMonitor()`.
+- Restarting resets the timer (another 30s).
+
+**Tab Navigation Behavior:**
+- **Navigating away from Noise tab:** Calls `stopNoiseMonitor()` (full teardown: releases mic, closes AudioContext, resets UI).
+- **Backgrounding app:** `visibilitychange` listener also calls `stopNoiseMonitor()` for battery savings.
+- **No pause/resume:** Unlike charts, noise monitoring fully stops when you leave the tab (security/privacy consideration — users should know when mic is active).
+
+**UI Components:**
+- **Vertical meter:** CSS-based (not Canvas) with 5 colored zone backgrounds (column-reverse flex for bottom-up fill).
+- **Fill bar:** Absolute positioned `<div>` with `height` animated via `transition: height 0.1s linear`.
+- **Meter range:** 30 dB = 0% height, 80 dB = 100% height (50 dB range covers pediatric-relevant levels).
+- **Large dB readout:** 72px font size for quick glanceability at 3am.
+- **Zone legend:** 5-item list showing ranges + guidance.
+- **Toggle button:** Start/Stop with icon/text changes (🎙️ → ⏹️).
+- **Status area:** Inline error messages (permission denied, no mic, unsupported browser).
+- **Disclaimer:** Text noting that phone mics are uncalibrated and readings are approximate.
+
+**Browser Compatibility:**
+- ✅ **Safari (iOS):** Works. Requires user gesture to create/resume AudioContext (handled by Start button click).
+- ✅ **Chrome (Android/Desktop):** Works.
+- ✅ **Firefox:** Works (unlike Speech Recognition which Firefox doesn't support).
+- ❌ **Older browsers:** Gracefully degrades with error message if `navigator.mediaDevices.getUserMedia` is unavailable.
+
+**Error Handling:**
+- `NotAllowedError` / `PermissionDeniedError` → "Microphone permission denied" message.
+- `NotFoundError` → "No microphone found" message.
+- No `getUserMedia` support → "Browser not supported" message.
+
+**State Variables:**
+- `noiseMonitorActive` (boolean): Whether monitoring is running.
+- `noiseAudioContext` (AudioContext): Web Audio processing context.
+- `noiseAnalyser` (AnalyserNode): FFT node for extracting amplitude data.
+- `noiseMediaStream` (MediaStream): Mic stream from `getUserMedia()`.
+- `noiseAnimationId` (number): Request animation frame ID for update loop.
+- `noiseTimerId` (number): Timeout ID for 30-second auto-stop.
+
+**Key Functions:**
+- `startNoiseMonitor()`: Requests mic access, creates audio pipeline, starts render loop, sets 30s timer.
+- `stopNoiseMonitor()`: Tears down all resources (clears timer, cancels animation, closes AudioContext, stops mic tracks, resets UI).
+- `toggleNoiseMonitor()`: Dispatches to start or stop based on current state.
+- `updateNoiseMeter()`: Called via `requestAnimationFrame()`. Reads amplitude, computes RMS, converts to dB, updates meter fill height and zone colors.
+- `getNoiseZone(db)`: Returns the zone object for a given dB level.
+
+**Calibration Considerations:**
+- Phone mics vary widely in sensitivity and frequency response.
+- The +94 dB offset is an industry-standard approximation (dB SPL ≈ dBFS + 94) but is not device-specific.
+- Readings are accurate enough for relative monitoring ("is the nursery quieter now?") but not for absolute SPL measurement.
+- Future enhancement: User-facing calibration step (e.g., "tap here in a quiet room to calibrate") could improve accuracy.
+
 ---
 
 ## API Endpoints
@@ -536,6 +617,38 @@ const FEATURE_FLAGS = {
 **State is ephemeral** - No localStorage, no persistence. When you refresh, it resets.
 
 **Why:** Simplicity. The source of truth is the Excel file on the server.
+
+### Tab Navigation
+
+**Tab System (v1.3+):**
+- Three tabs: **Tracker** (default), **Charts**, **Noise**
+- Tab buttons in `.tab-bar` with `data-tab` attributes
+- Content containers: `#trackerView`, `#chartsView`, `#noiseView`
+
+**switchTab(tab) Function:**
+- Dynamically shows/hides views using a `views` object map: `{ tracker: 'trackerView', charts: 'chartsView', noise: 'noiseView' }`
+- Generalized to support N tabs — adding a 4th tab requires only adding one entry to the `views` map
+- Updates button active states via `querySelectorAll('.tab-btn')` and `classList`
+- Calls tab-specific hooks:
+  - `tab === 'charts'` → `loadChartData(currentChartRange)`
+  - `tab !== 'noise' && noiseMonitorActive` → `stopNoiseMonitor()`
+
+**handleSwipe(startX, startY, endX, endY) Function:**
+- Builds ordered tab list dynamically from visible buttons: `Array.from(document.querySelectorAll('.tab-btn')).filter(b => b.style.display !== 'none')`
+- Swipe left → next tab (if not at end)
+- Swipe right → previous tab (if not at start)
+- No wrapping (swipe left on last tab does nothing)
+- Threshold: 50px horizontal movement, horizontal > vertical
+
+**Swipe Gestures:**
+- Listens to `touchstart` (captures `screenX`, `screenY`)
+- Listens to `touchend` (calculates diff, calls `handleSwipe()`)
+- Passive listeners for better scroll performance
+
+**Feature Flag Pattern:**
+- Noise tab button has `style="display: none"` by default
+- On page load, `if (FEATURE_FLAGS.NOISE_MONITOR_ENABLED)` → show the button
+- This allows graceful degradation: if flag is off, swipe still works with 2 tabs only
 
 ### Auto-Refresh
 
@@ -1103,6 +1216,16 @@ Before committing:
 - Fixed tracker day header stats to exclude Pump/Diaper/Vitamin D from feed counts
 - All 131 tests now passing
 - Added `requests` library as test dependency
+
+**v1.3 (Noise Monitor)** - February 16, 2026
+- Added Noise tab with real-time ambient sound monitoring via Web Audio API
+- Color-coded pediatric-safe dB zones (green/yellow/orange/red)
+- 30-second auto-stop timer to conserve battery
+- Auto-stops when navigating away from tab or backgrounding app
+- Generalized `switchTab()` and `handleSwipe()` to support N tabs dynamically
+- Feature-flagged via `NOISE_MONITOR_ENABLED` (enabled by default)
+- Fully client-side — no backend changes, no recording
+- All 132 tests passing (no regressions)
 
 ---
 
