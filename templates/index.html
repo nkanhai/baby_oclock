@@ -3036,13 +3036,11 @@
                         maxBarThickness: 40,
                         stack: 'Stack 0',
                         // Store metadata for tooltip
-                        _meta: {
-                            time: entry.time,
-                            amount: entry.amount,
-                            feedId: entry.feedId,
-                            entryIndex: entryIndex,
-                            totalEntriesForDay: dayEntries.length
-                        }
+                        entryTime: entry.time,
+                        entryAmount: entry.amount,
+                        entryId: entry.feedId,
+                        entryIndex: entryIndex,
+                        totalEntries: dayEntries.length
                     });
                 });
             });
@@ -3124,13 +3122,13 @@
                                     return context[0].label;
                                 },
                                 label: function(context) {
-                                    const meta = context.dataset._meta;
-                                    if (!meta) return '';
+                                    const dataset = context.dataset;
+                                    if (!dataset.entryTime) return '';
 
                                     // Format time as 12-hour with AM/PM
-                                    const timeFormatted = formatTime12Hour(meta.time);
+                                    const timeFormatted = formatTime12Hour(dataset.entryTime);
 
-                                    return `${timeFormatted}: ${meta.amount} ml`;
+                                    return `${timeFormatted}: ${dataset.entryAmount} ml`;
                                 }
                             }
                         },
@@ -3418,13 +3416,13 @@
                                     return context[0].label;
                                 },
                                 label: function(context) {
-                                    const meta = context.dataset._meta;
-                                    if (!meta) return '';
+                                    const dataset = context.dataset;
+                                    if (!dataset.entryTime) return '';
 
                                     // Format time as 12-hour with AM/PM
-                                    const timeFormatted = formatTime12Hour(meta.time);
+                                    const timeFormatted = formatTime12Hour(dataset.entryTime);
 
-                                    return `${timeFormatted}: ${meta.amount} ml`;
+                                    return `${timeFormatted}: ${dataset.entryAmount} ml`;
                                 }
                             }
                         }
