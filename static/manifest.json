@@ -1,6 +1,6 @@
 {
-  "name": "Esmé's Feed Tracker",
-  "short_name": "Feed Tracker",
+  "name": "Baby O'Clock",
+  "short_name": "Baby O'Clock",
   "description": "Track baby feeds with ease",
   "start_url": "/",
   "display": "standalone",
