@@ -3081,6 +3081,10 @@
             console.log('Milk Chart - Total datasets:', allDatasets.length);
 
             const ctx = document.getElementById('milkChart').getContext('2d');
+
+            // Use a Set to track seen labels for deduplication
+            const seenLabels = new Set();
+
             milkChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -3100,15 +3104,11 @@
                                 padding: 10,
                                 font: { size: 11 },
                                 // Filter to show only unique labels
-                                filter: function(item, chart) {
-                                    // Track which labels we've seen
-                                    if (!chart.legend._seenLabels) {
-                                        chart.legend._seenLabels = new Set();
-                                    }
-                                    if (chart.legend._seenLabels.has(item.text)) {
+                                filter: function(item) {
+                                    if (seenLabels.has(item.text)) {
                                         return false;
                                     }
-                                    chart.legend._seenLabels.add(item.text);
+                                    seenLabels.add(item.text);
                                     return true;
                                 }
                             }
