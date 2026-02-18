@@ -567,7 +567,7 @@
         .tumbler-container {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 10px;
             height: 180px;
             /* Show 3 items: top, center (selected), bottom */
             background: #252b3b;
@@ -594,7 +594,7 @@
         }
 
         .tumbler-column {
-            width: 80px;
+            width: 60px;
             height: 100%;
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
@@ -1257,6 +1257,7 @@
                     <!-- Tumbler Logic via JS -->
                     <div class="tumbler-container" id="bottleTumbler">
                         <div class="tumbler-highlight"></div>
+                        <div class="tumbler-column" id="bottleHundreds"></div>
                         <div class="tumbler-column" id="bottleTens"></div>
                         <div class="tumbler-column" id="bottleOnes"></div>
                         <div class="tumbler-unit">ml</div>
@@ -1344,6 +1345,7 @@
                         <div class="modal-subtitle">Select Amount</div>
                         <div class="tumbler-container">
                             <div class="tumbler-highlight"></div>
+                            <div class="tumbler-column" id="pumpHundreds"></div>
                             <div class="tumbler-column" id="pumpTens"></div>
                             <div class="tumbler-column" id="pumpOnes"></div>
                             <div class="tumbler-unit">ml</div>
@@ -1531,7 +1533,8 @@
             <div class="noise-status" id="noiseStatus"></div>
 
             <div class="noise-disclaimer">
-                Readings are approximate. Phone microphones are not calibrated instruments. Place phone near baby's sleep area for best results.
+                Readings are approximate. Phone microphones are not calibrated instruments. Place phone near baby's
+                sleep area for best results.
             </div>
         </div>
     </div>
@@ -1811,8 +1814,10 @@
         function initTumblers() {
             // Check if already initialized to avoid duplicate listeners
             if (document.getElementById('bottleTens').children.length === 0) {
+                createTumbler('bottleHundreds', 'bottleCustomMl');
                 createTumbler('bottleTens', 'bottleCustomMl');
                 createTumbler('bottleOnes', 'bottleCustomMl');
+                createTumbler('pumpHundreds', 'pumpCustomMl');
                 createTumbler('pumpTens', 'pumpCustomMl');
                 createTumbler('pumpOnes', 'pumpCustomMl');
             }
@@ -1864,14 +1869,18 @@
         }
 
         function getTumblerValue(prefix) {
+            const hundredsEl = document.getElementById(prefix + 'Hundreds');
             const tensEl = document.getElementById(prefix + 'Tens');
             const onesEl = document.getElementById(prefix + 'Ones');
 
+            const hundreds = Math.round(hundredsEl.scrollTop / 60);
             const tens = Math.round(tensEl.scrollTop / 60);
             const ones = Math.round(onesEl.scrollTop / 60);
 
             // Bounds check
-            return (Math.min(9, Math.max(0, tens)) * 10) + Math.min(9, Math.max(0, ones));
+            return (Math.min(9, Math.max(0, hundreds)) * 100) +
+                (Math.min(9, Math.max(0, tens)) * 10) +
+                Math.min(9, Math.max(0, ones));
         }
 
         // Helper to get HH:MM AM/PM from Date object
@@ -3099,7 +3108,7 @@
                                 padding: 10,
                                 font: { size: 11 },
                                 // Filter to show only unique labels
-                                filter: function(item) {
+                                filter: function (item) {
                                     if (seenLabels.has(item.text)) {
                                         return false;
                                     }
@@ -3117,11 +3126,11 @@
                             cornerRadius: 8,
                             padding: 10,
                             callbacks: {
-                                title: function(context) {
+                                title: function (context) {
                                     // Show date label
                                     return context[0].label;
                                 },
-                                label: function(context) {
+                                label: function (context) {
                                     const dataset = context.dataset;
                                     if (!dataset.entryTime) return '';
 
@@ -3411,11 +3420,11 @@
                             cornerRadius: 8,
                             padding: 10,
                             callbacks: {
-                                title: function(context) {
+                                title: function (context) {
                                     // Show date label
                                     return context[0].label;
                                 },
-                                label: function(context) {
+                                label: function (context) {
                                     const dataset = context.dataset;
                                     if (!dataset.entryTime) return '';
 
@@ -3630,10 +3639,10 @@
         let noiseTimerId = null;
 
         const NOISE_ZONES = [
-            { min: 0,  max: 45, label: 'Safe for sleep',       color: '#4CAF50' },
-            { min: 45, max: 50, label: 'Acceptable',            color: '#8BC34A' },
-            { min: 50, max: 60, label: 'Getting loud',          color: '#FFC107' },
-            { min: 60, max: 70, label: 'Too loud for baby!',    color: '#FF5722' },
+            { min: 0, max: 45, label: 'Safe for sleep', color: '#4CAF50' },
+            { min: 45, max: 50, label: 'Acceptable', color: '#8BC34A' },
+            { min: 50, max: 60, label: 'Getting loud', color: '#FFC107' },
+            { min: 60, max: 70, label: 'Too loud for baby!', color: '#FF5722' },
             { min: 70, max: 120, label: 'Danger — reduce now!', color: '#D32F2F' }
         ];
 
