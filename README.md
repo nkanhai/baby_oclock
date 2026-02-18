@@ -4,7 +4,7 @@ A dead-simple feed and diaper tracker designed for sleep-deprived parents. Big b
 
 ## Features
 
-- **Quick logging**: Log a bottle feed (Milk or Formula) in seconds with the intuitive Tumbler UI (0-99 ml)
+- **Quick logging**: Log a bottle feed (Milk or Formula) in seconds with the intuitive Tumbler UI (0-999 ml)
 - **Manual Time Entry**: Edit timestamps for any log if you forgot to track it immediately
 - **Parent Persistence**: App remembers who logged last (Mom/Dad) for quicker entry
 - **Diaper tracking**: Log pee, poop, or both with 2 taps — see "last diaper change" timer on home screen

@@ -322,6 +322,18 @@ This bug was fixed in commit that reordered keyword checks.
 
 ### 11. Charts Implementation (Feb 2026)
 
+### 13. 3-Digit Tumbler Support (Feb 2026)
+
+**Feature:** Scaled up the rotational dial to support quantities up to 999 ml (previously capped at 99 ml).
+
+**Implementation:**
+- Added a 3rd "Hundreds" column to the tumbler UI.
+- Updated `getTumblerValue()` to calculate `(hundreds * 100) + (tens * 10) + ones`.
+- Adjusted CSS column width (80px → 60px) and gap (20px → 10px) to fit 3 columns on mobile screens.
+- Applies to both **Bottle** (Milk/Formula) and **Pump** entries.
+
+### 11. Charts Implementation (Feb 2026)
+
 **Architecture:**
 - **Client-Side Aggregation:** `loadChartData(days)` fetches raw feed JSON from `/api/feeds` and groups/sums data in JavaScript.
 - **No New Endpoints:** Reuses existing API with `?limit_days=N`.
