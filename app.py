@@ -112,6 +112,8 @@ def format_feed_type(feed_type, side=None):
             return "Diaper"
     elif feed_type == "vitamin_d":
         return "Vitamin D"
+    elif feed_type == "iron":
+        return "Iron"
     return feed_type
 
 
@@ -312,10 +314,10 @@ def get_feeds():
     total_feeds_today = 0
 
     if feeds:
-        # Find most recent actual feed (not Vitamin D, not Pump)
+        # Find most recent actual feed (not Vitamin D, not Iron, not Pump)
         last_feed = None
         for feed in feeds:
-            if "Vitamin D" not in feed["type"] and "Pump" not in feed["type"]:
+            if "Vitamin D" not in feed["type"] and "Iron" not in feed["type"] and "Pump" not in feed["type"]:
                 last_feed = feed
                 break
 
@@ -348,7 +350,7 @@ def get_feeds():
 
         # Calculate total ml and feed count (only Bottle and Nurse)
         for feed in feeds:
-            if "Vitamin D" in feed["type"]:
+            if "Vitamin D" in feed["type"] or "Iron" in feed["type"]:
                 continue
             
             # Only count Bottle and Nurse as "feeds"
@@ -489,6 +491,81 @@ def log_vitamin():
         }), 500
 
 
+@app.route("/api/iron-status", methods=["GET"])
+def get_iron_status():
+    """Check if Iron has been given today. Also lazily auto-logs missed doses."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_feeds = get_feeds_from_excel(today)
+
+    # Check today's iron status
+    iron_feed = None
+    for feed in today_feeds:
+        if "Iron" in feed["type"]:
+            iron_feed = feed
+            break
+
+    # Lazy missed-dose check: did yesterday have an iron entry?
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday_feeds = get_feeds_from_excel(yesterday)
+    has_yesterday_iron = any("Iron" in f["type"] for f in yesterday_feeds)
+
+    if not has_yesterday_iron and yesterday_feeds:
+        # Yesterday had feeds but no iron — auto-log missed dose
+        yesterday_end = datetime.strptime(yesterday + " 23:59:00", "%Y-%m-%d %H:%M:%S")
+        missed_data = {
+            "type": "iron",
+            "side": None,
+            "amount_ml": None,
+            "duration_min": None,
+            "notes": "No",
+            "logged_by": "Auto",
+            "timestamp": yesterday_end.isoformat()
+        }
+        add_feed_to_excel(missed_data)
+
+    if iron_feed:
+        return jsonify({
+            "given_today": True,
+            "iron_feed_id": iron_feed["id"],
+            "time_given": iron_feed["time"]
+        })
+    else:
+        return jsonify({
+            "given_today": False,
+            "iron_feed_id": None,
+            "time_given": None
+        })
+
+
+@app.route("/api/iron", methods=["POST"])
+def log_iron():
+    """Log Iron administration."""
+    data = request.json or {}
+
+    feed_data = {
+        "type": "iron",
+        "side": None,
+        "amount_ml": None,
+        "duration_min": None,
+        "notes": "Yes",
+        "logged_by": data.get("logged_by", ""),
+        "timestamp": datetime.now().isoformat()
+    }
+
+    try:
+        feed_id = add_feed_to_excel(feed_data)
+        return jsonify({
+            "success": True,
+            "id": feed_id,
+            "message": "Iron logged"
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
     """Get summary statistics."""
@@ -504,8 +581,8 @@ def get_stats():
     timestamps = []
 
     for feed in feeds:
-        # Skip Vitamin D entries from feed stats
-        if "Vitamin D" in feed["type"]:
+        # Skip Vitamin D and Iron entries from feed stats
+        if "Vitamin D" in feed["type"] or "Iron" in feed["type"]:
             continue
 
         if "Bottle" in feed["type"]:
