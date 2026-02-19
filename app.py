@@ -114,6 +114,18 @@ def format_feed_type(feed_type, side=None):
         return "Vitamin D"
     elif feed_type == "iron":
         return "Iron"
+    elif feed_type == "mom_prenatal":
+        return "Pre-Natal (Mom)"
+    elif feed_type == "mom_moringa_am":
+        return "Moringa AM (Mom)"
+    elif feed_type == "mom_moringa_pm":
+        return "Moringa PM (Mom)"
+    elif feed_type == "mom_stool_am":
+        return "Stool Softener AM (Mom)"
+    elif feed_type == "mom_stool_pm":
+        return "Stool Softener PM (Mom)"
+    elif feed_type == "mom_vitamin_d":
+        return "Vitamin D (Mom)"
     return feed_type
 
 
@@ -158,6 +170,54 @@ def add_feed_to_excel(feed_data):
 
         except Exception as e:
             print(f"Error writing to Excel: {e}")
+            raise
+
+
+def batch_add_feeds_to_excel(feed_data_list):
+    """Append multiple feed entries in a single lock + load + save cycle.
+
+    Much faster than calling add_feed_to_excel() N times because the workbook
+    is only loaded from and written to disk once.
+    Returns a list of row IDs (one per entry).
+    """
+    if not feed_data_list:
+        return []
+
+    with file_lock:
+        try:
+            wb = load_workbook(get_excel_file())
+            ws = wb.active
+            ids = []
+
+            for feed_data in feed_data_list:
+                if isinstance(feed_data.get("timestamp"), str):
+                    timestamp = parse_iso_timestamp(feed_data["timestamp"])
+                    timestamp = timestamp.astimezone(None)
+                else:
+                    timestamp = datetime.now().astimezone(None)
+
+                feed_type_str = format_feed_type(
+                    feed_data.get("type"),
+                    feed_data.get("side")
+                )
+
+                ws.append([
+                    timestamp.strftime("%Y-%m-%d"),
+                    timestamp.strftime("%I:%M %p"),
+                    feed_type_str,
+                    feed_data.get("amount_ml"),
+                    feed_data.get("duration_min"),
+                    feed_data.get("notes", ""),
+                    feed_data.get("logged_by", ""),
+                    timestamp.isoformat()
+                ])
+                ids.append(ws.max_row - 1)
+
+            wb.save(get_excel_file())
+            return ids
+
+        except Exception as e:
+            print(f"Error batch-writing to Excel: {e}")
             raise
 
 
@@ -314,10 +374,13 @@ def get_feeds():
     total_feeds_today = 0
 
     if feeds:
-        # Find most recent actual feed (not Vitamin D, not Iron, not Pump)
+        # Find most recent actual feed (not supplements, not Pump)
         last_feed = None
         for feed in feeds:
-            if "Vitamin D" not in feed["type"] and "Iron" not in feed["type"] and "Pump" not in feed["type"]:
+            t = feed["type"]
+            if ("Vitamin D" not in t and "Iron" not in t
+                    and "Pump" not in t and "(Mom)" not in t
+                    and "Diaper" not in t):
                 last_feed = feed
                 break
 
@@ -350,15 +413,16 @@ def get_feeds():
 
         # Calculate total ml and feed count (only Bottle and Nurse)
         for feed in feeds:
-            if "Vitamin D" in feed["type"] or "Iron" in feed["type"]:
+            t = feed["type"]
+            if "Vitamin D" in t or "Iron" in t or "(Mom)" in t:
                 continue
-            
+
             # Only count Bottle and Nurse as "feeds"
-            if "Feed (Bottle" in feed["type"] or "Nurse" in feed["type"]:
+            if "Feed (Bottle" in t or "Nurse" in t:
                 total_feeds_today += 1
-            
+
             # Only sum ml from Bottle feeds (baby's intake, not pump output)
-            if "Feed (Bottle" in feed["type"] and feed["amount_ml"]:
+            if "Feed (Bottle" in t and feed["amount_ml"]:
                 total_ml_today += feed["amount_ml"]
 
     return jsonify({
@@ -425,14 +489,14 @@ def get_vitamin_status():
     # Check today's vitamin status
     vitamin_feed = None
     for feed in today_feeds:
-        if "Vitamin D" in feed["type"]:
+        if feed["type"] == "Vitamin D":
             vitamin_feed = feed
             break
 
     # Lazy missed-dose check: did yesterday have a vitamin entry?
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     yesterday_feeds = get_feeds_from_excel(yesterday)
-    has_yesterday_vitamin = any("Vitamin D" in f["type"] for f in yesterday_feeds)
+    has_yesterday_vitamin = any(f["type"] == "Vitamin D" for f in yesterday_feeds)
 
     if not has_yesterday_vitamin and yesterday_feeds:
         # Yesterday had feeds but no vitamin — auto-log missed dose
@@ -566,6 +630,108 @@ def log_iron():
         }), 500
 
 
+# ---------------------------------------------------------------------------
+# Mom pill tracking
+# ---------------------------------------------------------------------------
+
+# Ordered pill slots — "type" is the raw internal key, "formatted_type" is what Excel stores
+MOM_PILL_SLOTS = [
+    {"key": "prenatal",   "type": "mom_prenatal",   "formatted_type": "Pre-Natal (Mom)",         "label": "Pre-Natal"},
+    {"key": "moringa_am", "type": "mom_moringa_am",  "formatted_type": "Moringa AM (Mom)",         "label": "Moringa AM"},
+    {"key": "moringa_pm", "type": "mom_moringa_pm",  "formatted_type": "Moringa PM (Mom)",         "label": "Moringa PM"},
+    {"key": "stool_am",   "type": "mom_stool_am",   "formatted_type": "Stool Softener AM (Mom)",  "label": "Stool Softener AM"},
+    {"key": "stool_pm",   "type": "mom_stool_pm",   "formatted_type": "Stool Softener PM (Mom)",  "label": "Stool Softener PM"},
+    {"key": "vitamin_d",  "type": "mom_vitamin_d",  "formatted_type": "Vitamin D (Mom)",          "label": "Vitamin D (Mom)"},
+]
+
+
+@app.route("/api/mom-pills-status", methods=["GET"])
+def get_mom_pills_status():
+    """Check today's status for all mom pill slots and auto-log any missed yesterday."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    today_feeds = get_feeds_from_excel(today)
+    yesterday_feeds = get_feeds_from_excel(yesterday)
+
+    # Auto-log missed doses for yesterday (only if yesterday had any feeds at all).
+    # Compare against formatted_type — that's what Excel stores.
+    # Use batch write to do this in a single lock+load+save cycle (not 6 separate ones).
+    if yesterday_feeds:
+        yesterday_types = {f["type"] for f in yesterday_feeds}
+        yesterday_end = datetime.strptime(yesterday + " 23:59:00", "%Y-%m-%d %H:%M:%S")
+        missed_entries = [
+            {
+                "type": slot["type"],
+                "side": None,
+                "amount_ml": None,
+                "duration_min": None,
+                "notes": "No",
+                "logged_by": "Auto",
+                "timestamp": yesterday_end.isoformat()
+            }
+            for slot in MOM_PILL_SLOTS
+            if slot["formatted_type"] not in yesterday_types
+        ]
+        if missed_entries:
+            batch_add_feeds_to_excel(missed_entries)
+
+
+
+    # Build today's status for each slot.
+    # Key by formatted_type (what Excel returns in feed["type"]).
+    today_types = {}
+    for feed in today_feeds:
+        t = feed["type"]
+        if t not in today_types:  # most recent entry wins (feeds sorted desc)
+            today_types[t] = feed
+
+    status = {}
+    remaining = 0
+    for slot in MOM_PILL_SLOTS:
+        feed = today_types.get(slot["formatted_type"])
+        if feed and feed.get("notes") != "No":
+            status[slot["key"]] = {
+                "given": True,
+                "feed_id": feed["id"],
+                "time": feed["time"]
+            }
+        else:
+            status[slot["key"]] = {"given": False, "feed_id": None, "time": None}
+            remaining += 1
+
+    status["remaining"] = remaining
+    return jsonify(status)
+
+
+@app.route("/api/mom-pill", methods=["POST"])
+def log_mom_pill():
+    """Log a mom pill dose."""
+    data = request.json or {}
+    pill_key = data.get("pill", "")
+
+    # Look up the pill type
+    slot = next((s for s in MOM_PILL_SLOTS if s["key"] == pill_key), None)
+    if not slot:
+        return jsonify({"success": False, "error": f"Unknown pill: {pill_key}"}), 400
+
+    feed_data = {
+        "type": slot["type"],
+        "side": None,
+        "amount_ml": None,
+        "duration_min": None,
+        "notes": "Yes",
+        "logged_by": data.get("logged_by", ""),
+        "timestamp": datetime.now().isoformat()
+    }
+
+    try:
+        feed_id = add_feed_to_excel(feed_data)
+        return jsonify({"success": True, "id": feed_id, "label": slot["label"]}), 201
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
     """Get summary statistics."""
@@ -581,8 +747,9 @@ def get_stats():
     timestamps = []
 
     for feed in feeds:
-        # Skip Vitamin D and Iron entries from feed stats
-        if "Vitamin D" in feed["type"] or "Iron" in feed["type"]:
+        # Skip supplement entries from feed stats
+        t = feed["type"]
+        if "Vitamin D" in t or "Iron" in t or "(Mom)" in t:
             continue
 
         if "Bottle" in feed["type"]:
