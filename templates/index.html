@@ -1036,7 +1036,176 @@
             }
         }
 
-        /* Tab Bar */
+        /* ===================== Mom Tab Styles ===================== */
+
+        /* Notification dot on tab button */
+        .tab-btn {
+            position: relative;
+        }
+
+        .tab-btn .notif-dot {
+            display: none;
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #E8819A;
+            box-shadow: 0 0 0 2px #1a2035;
+        }
+
+        .tab-btn.has-notif .notif-dot {
+            display: block;
+        }
+
+        /* Tracker-page mom banner */
+        .mom-tracker-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: linear-gradient(135deg, #2d1f2a 0%, #2d2840 100%);
+            border-left: 4px solid #E8819A;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .mom-tracker-banner:active {
+            opacity: 0.75;
+        }
+
+        .mom-tracker-banner-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e8eaed;
+        }
+
+        .mom-tracker-banner-arrow {
+            font-size: 16px;
+            color: #E8819A;
+        }
+
+        /* Mom View layout */
+        #momView {
+            padding-bottom: 32px;
+        }
+
+        .mom-view-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e8eaed;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .mom-pills-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .mom-pill-card {
+            background: #1e2437;
+            border: 2px solid #2d3548;
+            border-radius: 16px;
+            padding: 16px 14px 14px;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.2s, background 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mom-pill-card:active {
+            transform: scale(0.96);
+        }
+
+        .mom-pill-card.taken {
+            background: #1a2b1a;
+            border-color: #2e5c2e;
+            cursor: default;
+        }
+
+        .mom-pill-card.missed {
+            background: #2b1a1a;
+            border-color: #5c2e2e;
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .mom-pill-card.confirming {
+            border-color: #4CD964;
+        }
+
+        .mom-pill-icon {
+            font-size: 28px;
+            line-height: 1;
+        }
+
+        .mom-pill-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #c8cdd8;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .mom-pill-status {
+            font-size: 11px;
+            font-weight: 500;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .mom-pill-status.taken-text {
+            color: #4CD964;
+        }
+
+        .mom-pill-status.missed-text {
+            color: #E07070;
+        }
+
+        /* Small × delete button on taken cards */
+        .mom-pill-delete {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .mom-pill-card.taken .mom-pill-delete {
+            display: flex;
+        }
+
+        .mom-pill-delete:active {
+            background: rgba(255, 80, 80, 0.25);
+            color: #ff6666;
+        }
+
+        /* =============  End Mom Tab Styles ============= */
+
+
         .tab-bar {
             display: flex;
             background: #252b3b;
@@ -1306,6 +1475,7 @@
     <div class="tab-bar" id="tabBar">
         <button class="tab-btn active" data-tab="tracker">Tracker</button>
         <button class="tab-btn" data-tab="charts">📈 Charts</button>
+        <button class="tab-btn" data-tab="mom" id="momTabBtn">💊 Mom<span class="notif-dot"></span></button>
         <button class="tab-btn" data-tab="noise" id="noiseTabBtn" style="display: none;">🔇 Noise</button>
     </div>
 
@@ -1335,7 +1505,12 @@
             </div>
         </div>
 
-        <!-- Last feed status -->
+        <!-- Mom pill reminder banner (Tracker tab) -->
+        <div class="mom-tracker-banner" id="momTrackerBanner" style="display:none;" onclick="switchTab('mom')">
+            <span class="mom-tracker-banner-text" id="momTrackerBannerText">💊 Mom: pills remaining</span>
+            <span class="mom-tracker-banner-arrow">›</span>
+        </div>
+
         <div class="last-feed-container" id="lastFeedContainer">
             <div class="last-feed-none">Loading...</div>
         </div>
@@ -1609,6 +1784,66 @@
         <div class="chart-card">
             <h3>🕐 Feed Timeline</h3>
             <canvas id="timelineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Mom View -->
+    <div id="momView" style="display: none;">
+        <div class="mom-view-title">💊 Mom's Daily Pills</div>
+        <div class="mom-pills-grid" id="momPillsGrid">
+
+            <!-- Pre-Natal (spans full width) -->
+            <div class="mom-pill-card" id="momCard-prenatal" onclick="logMomPill('prenatal')"
+                style="grid-column: 1 / -1;">
+                <button class="mom-pill-delete" onclick="event.stopPropagation(); deleteMomPill('prenatal')">×</button>
+                <span class="mom-pill-icon">🫶</span>
+                <span class="mom-pill-label">Pre-Natal</span>
+                <span class="mom-pill-status" id="momStatus-prenatal">Tap to confirm</span>
+            </div>
+
+            <!-- Moringa AM -->
+            <div class="mom-pill-card" id="momCard-moringa_am" onclick="logMomPill('moringa_am')">
+                <button class="mom-pill-delete"
+                    onclick="event.stopPropagation(); deleteMomPill('moringa_am')">×</button>
+                <span class="mom-pill-icon">🌿</span>
+                <span class="mom-pill-label">Moringa AM</span>
+                <span class="mom-pill-status" id="momStatus-moringa_am">Tap to confirm</span>
+            </div>
+
+            <!-- Moringa PM -->
+            <div class="mom-pill-card" id="momCard-moringa_pm" onclick="logMomPill('moringa_pm')">
+                <button class="mom-pill-delete"
+                    onclick="event.stopPropagation(); deleteMomPill('moringa_pm')">×</button>
+                <span class="mom-pill-icon">🌿</span>
+                <span class="mom-pill-label">Moringa PM</span>
+                <span class="mom-pill-status" id="momStatus-moringa_pm">Tap to confirm</span>
+            </div>
+
+            <!-- Stool Softener AM -->
+            <div class="mom-pill-card" id="momCard-stool_am" onclick="logMomPill('stool_am')">
+                <button class="mom-pill-delete" onclick="event.stopPropagation(); deleteMomPill('stool_am')">×</button>
+                <span class="mom-pill-icon">💊</span>
+                <span class="mom-pill-label">Stool Softener AM</span>
+                <span class="mom-pill-status" id="momStatus-stool_am">Tap to confirm</span>
+            </div>
+
+            <!-- Stool Softener PM -->
+            <div class="mom-pill-card" id="momCard-stool_pm" onclick="logMomPill('stool_pm')">
+                <button class="mom-pill-delete" onclick="event.stopPropagation(); deleteMomPill('stool_pm')">×</button>
+                <span class="mom-pill-icon">💊</span>
+                <span class="mom-pill-label">Stool Softener PM</span>
+                <span class="mom-pill-status" id="momStatus-stool_pm">Tap to confirm</span>
+            </div>
+
+            <!-- Vitamin D Mom -->
+            <div class="mom-pill-card" id="momCard-vitamin_d" onclick="logMomPill('vitamin_d')"
+                style="grid-column: 1 / -1;">
+                <button class="mom-pill-delete" onclick="event.stopPropagation(); deleteMomPill('vitamin_d')">×</button>
+                <span class="mom-pill-icon">🌸</span>
+                <span class="mom-pill-label">Vitamin D</span>
+                <span class="mom-pill-status" id="momStatus-vitamin_d">Tap to confirm</span>
+            </div>
+
         </div>
     </div>
 
@@ -2487,6 +2722,7 @@
                 // Refresh supplement statuses after loading feeds
                 checkVitaminStatus();
                 checkIronStatus();
+                loadMomPillsStatus();
             } catch (error) {
                 console.error('Error loading feeds:', error);
             }
@@ -2532,7 +2768,7 @@
         }
 
         function renderFeedItem(feed) {
-            const isSupplement = feed.type.includes('Vitamin D') || feed.type.includes('Iron');
+            const isSupplement = feed.type.includes('Vitamin D') || feed.type.includes('Iron') || feed.type.includes('(Mom)');
             const editBtn = isSupplement ? '' : `<button class="feed-edit" onclick="editFeed(${feed.id})">✎</button>`;
 
             return `
@@ -2549,18 +2785,40 @@
 
 
         function buildFeedDetailsText(feed) {
-            // Special display for Vitamin D entries
-            if (feed.type.includes('Vitamin D')) {
+            // Special display for Vitamin D entries (baby)
+            if (feed.type === 'Vitamin D') {
                 const administered = feed.notes === 'No' ? ' — Missed' : '';
                 const who = feed.notes === 'No' ? 'Auto-logged' : (feed.logged_by || '');
                 return `☀️ Vitamin D${administered}${who ? ' • ' + who : ''}`;
             }
 
-            // Special display for Iron entries
-            if (feed.type.includes('Iron')) {
+            // Vitamin D (Mom) — distinct icon so it's not confused with baby's
+            if (feed.type === 'Vitamin D (Mom)') {
+                const administered = feed.notes === 'No' ? ' — Missed' : '';
+                const who = feed.notes === 'No' ? 'Auto-logged' : (feed.logged_by || '');
+                return `🌸 Vitamin D (Mom)${administered}${who ? ' • ' + who : ''}`;
+            }
+
+            // Special display for Iron entries (baby)
+            if (feed.type.includes('Iron') && !feed.type.includes('(Mom)')) {
                 const administered = feed.notes === 'No' ? ' — Missed' : '';
                 const who = feed.notes === 'No' ? 'Auto-logged' : (feed.logged_by || '');
                 return `🥄 Iron${administered}${who ? ' • ' + who : ''}`;
+            }
+
+            // Mom pill entries
+            const momPillIcons = {
+                'Pre-Natal (Mom)': '🫶',
+                'Moringa AM (Mom)': '🌿',
+                'Moringa PM (Mom)': '🌿',
+                'Stool Softener AM (Mom)': '💊',
+                'Stool Softener PM (Mom)': '💊',
+            };
+            const momIcon = momPillIcons[feed.type];
+            if (momIcon !== undefined) {
+                const administered = feed.notes === 'No' ? ' — Missed' : '';
+                const who = feed.notes === 'No' ? 'Auto-logged' : (feed.logged_by || '');
+                return `${momIcon} ${feed.type.replace(' (Mom)', '')}${administered}${who ? ' • ' + who : ''}`;
             }
 
             let details = feed.type
@@ -3041,6 +3299,118 @@
         }
 
         // ==========================================
+        // MOM PILL TRACKING
+        // ==========================================
+
+        const MOM_PILL_KEYS = ['prenatal', 'moringa_am', 'moringa_pm', 'stool_am', 'stool_pm', 'vitamin_d'];
+        let momPillLogging = {}; // prevent double-taps per pill
+
+        function updateMomBadge(remaining) {
+            const momBtn = document.getElementById('momTabBtn');
+            const banner = document.getElementById('momTrackerBanner');
+            const bannerText = document.getElementById('momTrackerBannerText');
+
+            if (remaining > 0) {
+                momBtn?.classList.add('has-notif');
+                if (banner) {
+                    const plural = remaining === 1 ? 'pill' : 'pills';
+                    bannerText.textContent = `💊 Mom: ${remaining} ${plural} remaining`;
+                    banner.style.display = 'flex';
+                }
+            } else {
+                momBtn?.classList.remove('has-notif');
+                if (banner) banner.style.display = 'none';
+            }
+        }
+
+        function applyMomCardState(key, slotData) {
+            const card = document.getElementById(`momCard-${key}`);
+            const status = document.getElementById(`momStatus-${key}`);
+            if (!card || !status) return;
+
+            card.classList.remove('taken', 'missed', 'confirming');
+            card.dataset.feedId = '';
+
+            if (slotData.given) {
+                card.classList.add('taken');
+                card.dataset.feedId = slotData.feed_id;
+                status.className = 'mom-pill-status taken-text';
+                status.textContent = `✓ Taken at ${slotData.time}`;
+                card.onclick = null; // disable tap when already taken
+            } else {
+                status.className = 'mom-pill-status';
+                status.textContent = 'Tap to confirm';
+                card.onclick = () => logMomPill(key);
+            }
+        }
+
+        async function loadMomPillsStatus() {
+            try {
+                const response = await fetch('/api/mom-pills-status');
+                const data = await response.json();
+
+                MOM_PILL_KEYS.forEach(key => applyMomCardState(key, data[key] || { given: false }));
+                updateMomBadge(data.remaining ?? 0);
+            } catch (error) {
+                console.error('Error loading mom pills status:', error);
+            }
+        }
+
+        async function logMomPill(pillKey) {
+            if (momPillLogging[pillKey]) return;
+            momPillLogging[pillKey] = true;
+
+            const card = document.getElementById(`momCard-${pillKey}`);
+            const status = document.getElementById(`momStatus-${pillKey}`);
+
+            // Brief confirming animation
+            card?.classList.add('confirming');
+            if (status) status.textContent = 'Logging...';
+
+            try {
+                const response = await fetch('/api/mom-pill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pill: pillKey, logged_by: currentWho })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(`✅ ${result.label} taken`, false);
+                    await loadMomPillsStatus();
+                    loadFeeds(); // refresh tracker feed log immediately
+                } else {
+                    if (status) status.textContent = 'Tap to confirm';
+                    card?.classList.remove('confirming');
+                }
+            } catch (error) {
+                console.error('Error logging mom pill:', error);
+                if (status) status.textContent = 'Tap to confirm';
+                card?.classList.remove('confirming');
+            } finally {
+                momPillLogging[pillKey] = false;
+            }
+        }
+
+        async function deleteMomPill(pillKey) {
+            const card = document.getElementById(`momCard-${pillKey}`);
+            const feedId = card?.dataset.feedId;
+            if (!feedId) return;
+
+            try {
+                const response = await fetch(`/api/feeds/${feedId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    await loadMomPillsStatus();
+                    loadFeeds(); // refresh tracker feed log immediately
+                }
+            } catch (error) {
+                console.error('Error deleting mom pill:', error);
+            }
+        }
+
+        // ==========================================
         // CHARTS FUNCTIONALITY
         // ==========================================
 
@@ -3059,7 +3429,7 @@
             });
 
             // Hide all views, show selected
-            const views = { tracker: 'trackerView', charts: 'chartsView', noise: 'noiseView' };
+            const views = { tracker: 'trackerView', charts: 'chartsView', noise: 'noiseView', mom: 'momView' };
             Object.entries(views).forEach(([key, id]) => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = (key === tab) ? '' : 'none';
@@ -3067,6 +3437,7 @@
 
             // Tab-specific hooks
             if (tab === 'charts') loadChartData(currentChartRange);
+            if (tab === 'mom') loadMomPillsStatus();
             if (tab !== 'noise' && noiseMonitorActive) stopNoiseMonitor();
         }
 
